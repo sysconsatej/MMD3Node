@@ -5,7 +5,7 @@ import {
 } from "../config/DBConfig.js";
 
 export const getDropDownValues = async (req, res) => {
-  const { masterName, pageNo = 1, search = "" } = req.body;
+  const { masterName, pageNo = 1, search = "", selectedCondition } = req.body;
 
   if (!masterName) {
     return res
@@ -16,17 +16,13 @@ export const getDropDownValues = async (req, res) => {
   try {
     await initializeConnection();
 
-    const query = `EXEC getDropdownApi @masterName = @masterName, @pageNo = @pageNo, @search = @search`;
+    const query = `EXEC getDropdownApi @masterName = @masterName, @pageNo = @pageNo, @search = @search, @selectedCondition = @selectedCondition`;
 
-    const parameters = { masterName, pageNo, search };
+    const parameters = { masterName, pageNo, search, selectedCondition };
 
     const result = await executeQuery(query, parameters);
     const convertIntoJson = JSON.parse(result[0].data);
     const { data, totalPage } = convertIntoJson;
-
-    if (data.length === 0) {
-      return res.status(404).json({ message: "No data found" });
-    }
 
     res.status(200).json({
       success: true,
