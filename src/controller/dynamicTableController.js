@@ -12,7 +12,7 @@ export const getDynamicTable = async (req, res) => {
     searchColumn = null,
     searchValue = null,
     pageNo = 1,
-    pageSize = 25,
+    pageSize = 15,
   } = req.body;
 
   if (!columns || !tableName) {
@@ -37,15 +37,15 @@ export const getDynamicTable = async (req, res) => {
     };
 
     const result = await executeQuery(query, parameters);
-    console.log("result", result);
     const convertIntoJson = JSON.parse(result[0].data);
-    const { data, totalPage } = convertIntoJson;
+    const { data, totalPage, totalRows } = convertIntoJson;
 
     res.status(200).json({
       success: true,
       message: "Successfully fetched data",
       data: data,
       totalPage: totalPage,
+      totalRows: totalRows,
     });
   } catch (err) {
     res.status(500).json({
