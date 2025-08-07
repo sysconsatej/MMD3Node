@@ -4,6 +4,7 @@ import cors from "cors";
 
 import dropDownValuesRoute from "./src/routes/dropDownRoute.js";
 import masterRoute from "./src/routes/masterRoute.js";
+import dynamicTableRoute from "./src/routes/dynamicTableRoute.js";
 
 const app = express();
 app.use(express.json());
@@ -20,6 +21,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/v1", dropDownValuesRoute);
 app.use("/api/v1/master", masterRoute);
+app.use("/api/v1", dynamicTableRoute);
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
