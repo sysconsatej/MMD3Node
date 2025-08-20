@@ -26,8 +26,8 @@ export const insertUpdate = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: recordId
-        ? "Record updated successfully"
-        : "Record inserted successfully",
+        ? "Form updated successfully"
+        : "Form inserted successfully",
       result: rows,
     });
   } catch (err) {
