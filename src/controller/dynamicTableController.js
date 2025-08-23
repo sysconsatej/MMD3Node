@@ -12,7 +12,7 @@ export const getDynamicTable = async (req, res) => {
     searchColumn = null,
     searchValue = null,
     pageNo = 1,
-    pageSize = 30,
+    pageSize = 25,
   } = req.body;
 
   if (!columns || !tableName) {
