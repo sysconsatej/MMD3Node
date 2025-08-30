@@ -6,29 +6,31 @@ import {
 
 export const insertUpdate = async (req, res) => {
   try {
-    const { tableName, data, recordId = null } = req.body;
+    const { tableName, submitJson, formId = null } = req.body;
 
-    if (!tableName || !data) {
+    if (!tableName || !submitJson) {
       return res.status(400).json({
         success: false,
-        message: "Missing required fields: 'tableName' and 'data'",
+        message: "Missing required fields: 'tableName' and 'submitJson'",
       });
     }
 
     await initializeConnection();
 
-    const payload = { tableName, data, recordId };
-    const query = `EXEC dbo.dynamicInsertUpdateApi @json = @json`;
-    const parameters = { json: JSON.stringify(payload) };
+    const parameters = {
+      tableName,
+      submitJson: JSON.stringify(submitJson),
+      formId,
+    };
+    const query = `EXEC dynamicMultiSubmit @tableName = @tableName, @submitJson = @submitJson, @formId = @formId`;
 
-    const rows = await executeQuery(query, parameters);
+    await executeQuery(query, parameters);
 
     return res.status(200).json({
       success: true,
-      message: recordId
+      message: formId
         ? "Form updated successfully"
         : "Form inserted successfully",
-      result: rows,
     });
   } catch (err) {
     return res.status(500).json({
