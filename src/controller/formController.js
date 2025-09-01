@@ -24,7 +24,18 @@ export const insertUpdate = async (req, res) => {
     };
     const query = `EXEC dynamicMultiSubmit @tableName = @tableName, @submitJson = @submitJson, @formId = @formId`;
 
-    await executeQuery(query, parameters);
+    const rows = await executeQuery(query, parameters);
+    const jsonStr = Object.values(rows[0])[0];
+
+    const { error, success } = JSON.parse(jsonStr);
+
+    if (!success) {
+      return res.status(500).json({
+        success: false,
+        message: "Error executing dynamicMultiSubmit",
+        error: error,
+      });
+    }
 
     return res.status(200).json({
       success: true,
@@ -35,7 +46,7 @@ export const insertUpdate = async (req, res) => {
   } catch (err) {
     return res.status(500).json({
       success: false,
-      message: "Error executing dynamicInsertUpdateApi",
+      message: "Error executing dynamicMultiSubmit",
       error: err.message,
     });
   } finally {
