@@ -2,7 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 
-import dropDownValuesRoute from "./src/routes/dropDownRoute.js";
+import dropDownValuesRoute from "./src/routes/utilsRoute.js";
 import dynamicTableRoute from "./src/routes/dynamicTableRoute.js";
 import formRoute from "./src/routes/formRoute.js"
 
