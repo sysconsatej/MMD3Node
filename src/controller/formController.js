@@ -6,7 +6,12 @@ import {
 
 export const insertUpdate = async (req, res) => {
   try {
-    const { tableName, submitJson, formId = null } = req.body;
+    const {
+      tableName,
+      submitJson,
+      formId = null,
+      parentColumnName = null,
+    } = req.body;
 
     if (!tableName || !submitJson) {
       return res.status(400).json({
@@ -21,8 +26,9 @@ export const insertUpdate = async (req, res) => {
       tableName,
       submitJson: JSON.stringify(submitJson),
       formId,
+      parentColumnName,
     };
-    const query = `EXEC dynamicMultiSubmit @tableName = @tableName, @submitJson = @submitJson, @formId = @formId`;
+    const query = `EXEC dynamicMultiSubmit @tableName = @tableName, @submitJson = @submitJson, @formId = @formId, @parentColumnName = @parentColumnName`;
 
     const rows = await executeQuery(query, parameters);
     const jsonStr = Object.values(rows[0])[0];
