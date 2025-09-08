@@ -62,7 +62,13 @@ export const insertUpdate = async (req, res) => {
 
 export const fetchForm = async (req, res) => {
   try {
-    const { dropdownFields = [], parentTableName, recordId } = req.body;
+    const {
+      dropdownFields = [],
+      parentTableName,
+      recordId,
+      childTableNames,
+      parentTableColumnName,
+    } = req.body;
 
     if (!parentTableName || !recordId) {
       return res.status(400).json({
@@ -77,8 +83,10 @@ export const fetchForm = async (req, res) => {
       dropdownFields: JSON.stringify(dropdownFields),
       parentTableName,
       recordId,
+      childTableNames,
+      parentTableColumnName,
     };
-    const query = `EXEC fetchFormDataApi @dropdownFields = @dropdownFields, @parentTableName = @parentTableName, @recordId = @recordId`;
+    const query = `EXEC fetchFormDataApi @dropdownFields = @dropdownFields, @parentTableName = @parentTableName, @recordId = @recordId, @childTableNames = @childTableNames, @parentTableColumnName = @parentTableColumnName`;
     const result = await executeQuery(query, payload);
 
     const jsonStr = Object.values(result[0])[0];
