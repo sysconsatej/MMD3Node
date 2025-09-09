@@ -107,3 +107,43 @@ export const fetchForm = async (req, res) => {
     await closeConnection();
   }
 };
+
+export const deleteRecord = async (req, res) => {
+  try {
+    const { recordId, tableName } = req.body;
+
+    if (!tableName || !recordId) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields: 'tableName' and 'recordId'",
+      });
+    }
+
+    await initializeConnection();
+
+    const payload = {
+      tableName,
+      recordId,
+    };
+
+    const query = `EXEC deleteRecordApi @recordId = @recordId, @tableName = @tableName`;
+    const result = await executeQuery(query, payload);
+
+    const jsonStr = Object.values(result[0])[0];
+    const parsed = JSON.parse(jsonStr);
+
+    return res.status(200).json({
+      success: true,
+      message: "Record deleted successfully!",
+      result: parsed,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Error executing deleteRecordApi",
+      error: err.message,
+    });
+  } finally {
+    await closeConnection();
+  }
+};
