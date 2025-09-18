@@ -24,7 +24,7 @@ export const insertUpdate = async (req, res) => {
 
     const parameters = {
       tableName,
-      submitJson: JSON.stringify(submitJson),
+      submitJson: submitJson,
       formId,
       parentColumnName,
     };
@@ -41,6 +41,18 @@ export const insertUpdate = async (req, res) => {
         message: "Error executing dynamicMultiSubmit",
         error: error,
       });
+    }
+
+    const uploadFiles = req?.files?.attachments;
+
+    if (uploadFiles) {
+      if (Array.isArray(uploadFiles)) {
+        for (const file of uploadFiles) {
+          await file.mv(`./uploads/${file.name}`);
+        }
+      } else {
+        await uploadFiles.mv(`./uploads/${uploadFiles.name}`);
+      }
     }
 
     return res.status(200).json({
