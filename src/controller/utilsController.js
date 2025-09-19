@@ -43,7 +43,7 @@ export const getDropDownValues = async (req, res) => {
 };
 
 export const getTableValues = async (req, res) => {
-  const { columns, tableName, whereCondition = null } = req.body;
+  const { columns, tableName, whereCondition = null, orderBy = 1 } = req.body;
 
   if (!columns || !tableName) {
     return res
@@ -54,9 +54,9 @@ export const getTableValues = async (req, res) => {
   try {
     await initializeConnection();
 
-    const query = `EXEC getDataApi @columns = @columns, @tableName = @tableName, @whereCondition = @whereCondition`;
+    const query = `EXEC getDataApi @columns = @columns, @tableName = @tableName, @whereCondition = @whereCondition, @orderBy = @orderBy`;
 
-    const parameters = { columns, tableName, whereCondition };
+    const parameters = { columns, tableName, whereCondition, orderBy };
 
     const result = await executeQuery(query, parameters);
     const jsonStr = Object.values(result[0])[0];
