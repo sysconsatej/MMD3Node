@@ -77,3 +77,38 @@ export const getTableValues = async (req, res) => {
     await closeConnection();
   }
 };
+
+export const nextPrevData = async (req, res) => {
+  const { formId, orderBy = "id", columnName, tableName } = req.body;
+
+  if (!formId || !columnName || !tableName) {
+    return res.status(400).json({
+      message:
+        "The 'columnName' or 'formId' or 'tableName' parameter is required",
+    });
+  }
+
+  try {
+    await initializeConnection();
+
+    const query = `EXEC nextPrevDataApi @formId = @formId, @columnName = @columnName, @tableName = @tableName, @orderBy = @orderBy`;
+
+    const parameters = { formId, columnName, tableName, orderBy };
+
+    const result = await executeQuery(query, parameters);
+
+    res.status(200).json({
+      success: true,
+      message: "Successfully fetched data",
+      data: result[0],
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Error executing nextPrevDataApi API",
+      error: err.message,
+    });
+  } finally {
+    await closeConnection();
+  }
+};
