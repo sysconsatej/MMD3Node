@@ -13,6 +13,7 @@ export const getDynamicTable = async (req, res) => {
     searchValue = null,
     pageNo = 1,
     pageSize = 25,
+    advanceSearch = null,
   } = req.body;
 
   if (!columns || !tableName) {
@@ -24,7 +25,7 @@ export const getDynamicTable = async (req, res) => {
   try {
     await initializeConnection();
 
-    const query = `EXEC searchTableApi @columns = @columns, @tableName = @tableName, @joins = @joins, @searchColumn = @searchColumn, @searchValue = @searchValue, @pageNo = @pageNo, @pageSize = @pageSize`;
+    const query = `EXEC searchTableApi @columns = @columns, @tableName = @tableName, @joins = @joins, @searchColumn = @searchColumn, @searchValue = @searchValue, @pageNo = @pageNo, @pageSize = @pageSize, @advanceSearch = @advanceSearch`;
 
     const parameters = {
       columns,
@@ -34,6 +35,7 @@ export const getDynamicTable = async (req, res) => {
       searchValue,
       pageNo,
       pageSize,
+      advanceSearch,
     };
 
     const result = await executeQuery(query, parameters);
