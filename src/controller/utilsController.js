@@ -43,7 +43,7 @@ export const getDropDownValues = async (req, res) => {
 };
 
 export const getTableValues = async (req, res) => {
-  const { columns, tableName, whereCondition = null } = req.body;
+  const { columns, tableName, whereCondition = null, orderBy = 1 } = req.body;
 
   if (!columns || !tableName) {
     return res
@@ -54,9 +54,9 @@ export const getTableValues = async (req, res) => {
   try {
     await initializeConnection();
 
-    const query = `EXEC getDataApi @columns = @columns, @tableName = @tableName, @whereCondition = @whereCondition`;
+    const query = `EXEC getDataApi @columns = @columns, @tableName = @tableName, @whereCondition = @whereCondition, @orderBy = @orderBy`;
 
-    const parameters = { columns, tableName, whereCondition };
+    const parameters = { columns, tableName, whereCondition, orderBy };
 
     const result = await executeQuery(query, parameters);
     const jsonStr = Object.values(result[0])[0];
@@ -71,6 +71,41 @@ export const getTableValues = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error executing getDataApi API",
+      error: err.message,
+    });
+  } finally {
+    await closeConnection();
+  }
+};
+
+export const nextPrevData = async (req, res) => {
+  const { formId, orderBy = "id", columnName, tableName } = req.body;
+
+  if (!formId || !columnName || !tableName) {
+    return res.status(400).json({
+      message:
+        "The 'columnName' or 'formId' or 'tableName' parameter is required",
+    });
+  }
+
+  try {
+    await initializeConnection();
+
+    const query = `EXEC nextPrevDataApi @formId = @formId, @columnName = @columnName, @tableName = @tableName, @orderBy = @orderBy`;
+
+    const parameters = { formId, columnName, tableName, orderBy };
+
+    const result = await executeQuery(query, parameters);
+
+    res.status(200).json({
+      success: true,
+      message: "Successfully fetched data",
+      data: result[0],
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Error executing nextPrevDataApi API",
       error: err.message,
     });
   } finally {
