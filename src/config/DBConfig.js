@@ -46,6 +46,47 @@ export async function executeQuery(queryString, parameters = {}) {
   }
 }
 
+export async function executeQuerySpData(queryString, parameters = {}) {
+  if (!pool) throw new Error("Database connection not initialized");
+
+  try {
+    const request = pool.request();
+
+    for (const [key, value] of Object.entries(parameters)) {
+      const k = String(key).toLowerCase();
+
+      if (k === "jsondata") {
+        request.input(key, sql.NVarChar(sql.MAX), value);
+        continue;
+      }
+
+      if (value === null || value === undefined) {
+        request.input(key, sql.NVarChar(sql.MAX), null);
+      } else if (typeof value === "string") {
+        request.input(key, sql.NVarChar(sql.MAX), value);
+      } else if (typeof value === "number") {
+        if (Number.isInteger(value)) {
+          request.input(key, sql.Int, value);
+        } else {
+          request.input(key, sql.Float, value);
+        }
+      } else if (typeof value === "boolean") {
+        request.input(key, sql.Bit, value);
+      } else if (value instanceof Date) {
+        request.input(key, sql.DateTime2, value);
+      } else {
+        request.input(key, sql.NVarChar(sql.MAX), JSON.stringify(value));
+      }
+    }
+
+    const result = await request.query(queryString);
+    return result;
+  } catch (error) {
+    console.error("Query execution error:", error);
+    throw error;
+  }
+}
+
 export async function closeConnection() {
   if (pool) {
     await pool.close();
