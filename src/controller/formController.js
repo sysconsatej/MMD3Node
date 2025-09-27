@@ -3,6 +3,7 @@ import {
   executeQuery,
   initializeConnection,
 } from "../config/DBConfig.js";
+import xlsx from "xlsx";
 
 export const insertUpdate = async (req, res) => {
   try {
@@ -153,6 +154,51 @@ export const deleteRecord = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Error executing deleteRecordApi",
+      error: err.message,
+    });
+  } finally {
+    await closeConnection();
+  }
+};
+
+export const uploadExcel = async (req, res) => {
+  try {
+    const excelFile = req?.files?.excelFile;
+
+    if (!excelFile) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields: 'excelFile'",
+      });
+    }
+
+    const workbook = xlsx.read(excelFile.data, { type: "buffer" });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = xlsx.utils.sheet_to_json(worksheet);
+
+    // await initializeConnection();
+
+    // const payload = {
+    //   tableName,
+    //   recordId,
+    // };
+
+    // const query = `EXEC deleteRecordApi @recordId = @recordId, @tableName = @tableName`;
+    // const result = await executeQuery(query, payload);
+
+    // const jsonStr = Object.values(result[0])[0];
+    // const parsed = JSON.parse(jsonStr);
+
+    return res.status(200).json({
+      success: true,
+      message: "excel upload successfully!",
+      result: data,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Error executing uploadExcel api",
       error: err.message,
     });
   } finally {
