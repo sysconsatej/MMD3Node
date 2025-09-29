@@ -9,6 +9,7 @@ import dropDownValuesRoute from "./src/routes/utilsRoute.js";
 import dynamicTableRoute from "./src/routes/dynamicTableRoute.js";
 import formRoute from "./src/routes/formRoute.js";
 import updateStatusRoute from "./src/routes/updateStatusRoute.js";
+import dynamicReport from "./src/routes/dynamicReportRoute.js";
 import emailPdfReports from "./src/routes/reportsRoute.js";
 
 const app = express();
@@ -32,6 +33,8 @@ app.use("/api/v1", dropDownValuesRoute);
 app.use("/api/v1", dynamicTableRoute);
 app.use("/api/v1/form", formRoute);
 app.use("/api/v1", updateStatusRoute);
+app.use("/api/v1", dynamicReport);
+
 app.use("/api/v1/reports", emailPdfReports);
 
 app.listen(port, () => {
