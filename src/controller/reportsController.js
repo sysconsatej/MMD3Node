@@ -38,6 +38,7 @@ async function getBrowser() {
         "--disable-gpu",
         "--no-zygote",
       ],
+      executablePath: "/usr/bin/chromium-browser",
     });
   }
   return BROWSER_PROMISE;
