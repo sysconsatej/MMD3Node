@@ -1,13 +1,22 @@
-import { initializeConnection, closeConnection, executeQuerySpData, } from "../config/DBConfig.js";
+import {
+  initializeConnection,
+  closeConnection,
+  executeQuerySpData,
+} from "../config/DBConfig.js";
 
 export const dynamicReportUpdate = async (req, res) => {
   const spName = req.body?.spName || req.body?.spname;
   let { jsonData } = req.body;
 
-  if (!spName || typeof spName !== "string" || !/^[A-Za-z0-9_.]+$/.test(spName)) {
+  if (
+    !spName ||
+    typeof spName !== "string" ||
+    !/^[A-Za-z0-9_.]+$/.test(spName)
+  ) {
     return res.status(400).json({
       success: false,
-      message: "Invalid or missing 'spName'. Only letters, numbers, underscore, and dot are allowed.",
+      message:
+        "Invalid or missing 'spName'. Only letters, numbers, underscore, and dot are allowed.",
     });
   }
 
@@ -20,7 +29,8 @@ export const dynamicReportUpdate = async (req, res) => {
   if (items.length === 0) {
     return res.status(400).json({
       success: false,
-      message: "No jsonData supplied. Provide 'jsonData' as an object or array of objects.",
+      message:
+        "No jsonData supplied. Provide 'jsonData' as an object or array of objects.",
     });
   }
 
@@ -34,19 +44,30 @@ export const dynamicReportUpdate = async (req, res) => {
         const sqlText = `EXEC ${spName} @json = @jsonData`;
         const raw = await executeQuerySpData(sqlText, { jsonData: payload });
 
-        const recordset =
-          Array.isArray(raw) ? raw : raw?.recordset || (Array.isArray(raw?.recordsets) && raw.recordsets[0]) || [];
+        const recordset = Array.isArray(raw)
+          ? raw
+          : raw?.recordset ||
+            (Array.isArray(raw?.recordsets) && raw.recordsets[0]) ||
+            [];
         const firstRow = recordset?.[0];
         const firstColName = firstRow ? Object.keys(firstRow)[0] : null;
         const maybeJsonStr = firstRow
-          ? (firstRow.json ?? firstRow.data ?? (typeof firstRow[firstColName] === "string" ? firstRow[firstColName] : null))
+          ? firstRow.json ??
+            firstRow.data ??
+            (typeof firstRow[firstColName] === "string"
+              ? firstRow[firstColName]
+              : null)
           : null;
 
         let data = null;
         if (typeof maybeJsonStr === "string") {
           const t = maybeJsonStr.trim();
           if (t && /^[\[{]/.test(t)) {
-            try { data = JSON.parse(t); } catch { /* ignore parse error; keep data = null */ }
+            try {
+              data = JSON.parse(t);
+            } catch {
+              /* ignore parse error; keep data = null */
+            }
           }
         }
 
@@ -175,15 +196,13 @@ export const getSpData = async (req, res) => {
       const parsed = await execOnceJson(spName, item);
       results.push(parsed);
     }
-    return res
-      .status(200)
-      .json({
-        success: true,
-        spName,
-        batch: true,
-        count: results.length,
-        data: results,
-      });
+    return res.status(200).json({
+      success: true,
+      spName,
+      batch: true,
+      count: results.length,
+      data: results,
+    });
   } catch (err) {
     return res.status(500).json({
       success: false,
