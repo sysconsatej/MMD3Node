@@ -11,6 +11,7 @@ import formRoute from "./src/routes/formRoute.js";
 import updateStatusRoute from "./src/routes/updateStatusRoute.js";
 import dynamicReport from "./src/routes/dynamicReportRoute.js";
 import emailPdfReports from "./src/routes/reportsRoute.js";
+import userRoute from "./src/routes/userRoute.js";
 
 const app = express();
 app.use(express.json());
@@ -36,11 +37,12 @@ app.use("/api/v1", updateStatusRoute);
 app.use("/api/v1", dynamicReport);
 
 app.use("/api/v1/reports", emailPdfReports);
+app.use("/api/v1/user", userRoute);
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
-console.log("Testing push code ....")
+console.log("Testing push code ....");
 
 export default app;
