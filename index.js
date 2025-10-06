@@ -41,4 +41,6 @@ app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
+console.log("Testing push code ....")
+
 export default app;
