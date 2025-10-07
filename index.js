@@ -15,7 +15,7 @@ import userRoute from "./src/routes/userRoute.js";
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({ origin: process.env.FRONTEND_APP, credentials: true }));
 app.use(fileUpload({ createParentPath: true }));
 
 const __filename = fileURLToPath(import.meta.url);

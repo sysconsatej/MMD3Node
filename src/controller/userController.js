@@ -18,7 +18,7 @@ export const loginUser = async (req, res) => {
         .send({ message: "Username and Password are required" });
     }
 
-    const fetchUserFromDb = await userConst(); 
+    const fetchUserFromDb = await userConst();
     if (
       fetchUserFromDb.username !== username ||
       fetchUserFromDb.password !== password
@@ -31,9 +31,18 @@ export const loginUser = async (req, res) => {
       expiresIn: "1h",
     });
 
+    res.cookie("auth_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production"  || false, 
+      maxAge: 60 * 60 * 1000,
+      sameSite: "lax",
+      path: "/",
+    });
+
     return res.status(200).send({
       message: "Login successful",
       token: token,
+      user: { username: fetchUserFromDb?.username },
     });
   } catch (err) {
     return res.status(500).send({ errorMessage: err });
