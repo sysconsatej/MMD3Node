@@ -1,5 +1,9 @@
 import jwt from "jsonwebtoken";
 
+console.log("userController.js file is loaded");
+
+// Dummy function to simulate fetching user from database
+
 const userConst = () =>
   new Promise((reslove) => {
     reslove({
