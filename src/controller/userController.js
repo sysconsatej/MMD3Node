@@ -1,9 +1,5 @@
 import jwt from "jsonwebtoken";
 
-console.log("userController.js file is loaded");
-
-// Dummy function to simulate fetching user from database
-
 const userConst = () =>
   new Promise((reslove) => {
     reslove({
@@ -35,13 +31,13 @@ export const loginUser = async (req, res) => {
       expiresIn: "1h",
     });
 
-    res.cookie("auth_token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production", 
-      maxAge: 60 * 60 * 1000,
-      sameSite: "lax",
-      path: "/",
-    });
+    // res.cookie("auth_token", token, {
+    //   httpOnly: true,
+    //   secure: process.env.NODE_ENV === "production", 
+    //   maxAge: 60 * 60 * 1000,
+    //   sameSite: "lax",
+    //   path: "/",
+    // });
 
     return res.status(200).send({
       message: "Login successful",
@@ -49,6 +45,7 @@ export const loginUser = async (req, res) => {
       user: { username: fetchUserFromDb?.username },
     });
   } catch (err) {
+    console.log("Error in loginUser:", err);
     return res.status(500).send({ errorMessage: err });
   }
 };
