@@ -5,42 +5,111 @@ import {
 } from "../config/DBConfig.js";
 
 export const getDropDownValues = async (req, res) => {
-  const { masterName, pageNo = 1, search = "", selectedCondition } = req.body;
+  let {
+    masterName,
+    tableName,
+    displayColumn = "name",
+    pageNo = 1,
+    pageSize = 50,
+    search = "",
+    idColumn = "id",
+    joins = "",
+    where = "",
+    searchColumn = null,
+    orderBy = null,
+    selectedCondition = null,
+    selectedCondition1 = null,
+    selectedCondition2 = null,
+    filtersJson = null,
+  } = req.body;
 
-  if (!masterName) {
-    return res
-      .status(400)
-      .json({ message: "The 'masterName' parameter is required" });
+  if (!tableName && masterName) {
+    const parts = String(masterName).split(",").map(s => s.trim());
+    const disp = parts[0] || "name";
+    const tblRaw = parts[1] || "tblMasterData";
+    const hasAlias = tblRaw.includes(" ");
+    const alias = hasAlias ? tblRaw.split(" ").slice(-1)[0] : "t";
+    tableName = hasAlias ? tblRaw : `${tblRaw} ${alias}`;
+    displayColumn = disp.includes(".") ? disp : `${alias}.${disp}`;
   }
+
+  if (!tableName) {
+    return res.status(400).json({
+      success: false,
+      message: "Either 'tableName' or 'masterName' is required",
+    });
+  }
+
+  const filtersJsonStr =
+    typeof filtersJson === "string" ? filtersJson : (filtersJson ? JSON.stringify(filtersJson) : null);
+
+  const query = `
+    EXEC getDropdownApi
+      @tableName=@tableName,
+      @displayColumn=@displayColumn,
+      @pageNo=@pageNo,
+      @pageSize=@pageSize,
+      @search=@search,
+      @idColumn=@idColumn,
+      @joins=@joins,
+      @where=@where,
+      @searchColumn=@searchColumn,
+      @orderBy=@orderBy,
+      @selectedCondition=@selectedCondition,
+      @selectedCondition1=@selectedCondition1,
+      @selectedCondition2=@selectedCondition2,
+      @filtersJson=@filtersJson
+  `;
+
+  const parameters = {
+    tableName,
+    displayColumn,
+    pageNo,
+    pageSize,
+    search,
+    idColumn,
+    joins,
+    where,
+    searchColumn,
+    orderBy,
+    selectedCondition,
+    selectedCondition1,
+    selectedCondition2,
+    filtersJson: filtersJsonStr,
+  };
 
   try {
     await initializeConnection();
 
-    const query = `EXEC getDropdownApi @masterName = @masterName, @pageNo = @pageNo, @search = @search, @selectedCondition = @selectedCondition`;
-
-    const parameters = { masterName, pageNo, search, selectedCondition };
-
     const result = await executeQuery(query, parameters);
-    const convertIntoJson = JSON.parse(result[0].data);
-    const { data, totalPage } = convertIntoJson;
+
+    const jsonStr =
+      result?.[0]?.data ||
+      result?.[0]?.Data ||
+      JSON.stringify({ data: [], totalPage: 0 });
+
+    const parsed = JSON.parse(jsonStr);
+    const { data = [], totalPage = 0 } = parsed || {};
 
     res.status(200).json({
       success: true,
-      message: "Successfully fetched data",
-      labelType: masterName,
-      data: data,
-      totalPage: totalPage,
+      message: data.length ? "Successfully fetched data" : "No data",
+      labelType: masterName || `${displayColumn},${tableName}`,
+      data,
+      totalPage,
     });
   } catch (err) {
     res.status(500).json({
       success: false,
-      message: "Error executing master API",
+      message: "Error executing dropdown API",
       error: err.message,
     });
   } finally {
     await closeConnection();
   }
 };
+
+
 
 export const getTableValues = async (req, res) => {
   const { columns, tableName, whereCondition = null, orderBy = 1 } = req.body;
