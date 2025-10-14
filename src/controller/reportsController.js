@@ -2,6 +2,9 @@
 import puppeteer from "puppeteer";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
+import fs from "fs";
+import fetch from "node-fetch";
+
 
 // ====== ENV helper ======
 const env = (
@@ -256,6 +259,98 @@ export const emailPdfReports = async (req, res) => {
   } finally {
     try {
       if (page) await page.close(); // keep browser warm
-    } catch {}
+    } catch { }
+  }
+};
+
+export const localPDFReports = async (req, res) => {
+  try {
+    const {
+      htmlContent = "",
+      orientation = "portrait",
+      pdfFilename = "report",
+    } = req.body || {};
+
+    // quick sanity checks + debug
+    console.log("localPDFReports content-type:", req.headers["content-type"]);
+    console.log("localPDFReports body keys:", Object.keys(req.body || {}));
+    if (!htmlContent || typeof htmlContent !== "string") {
+      return res
+        .status(400)
+        .json({ success: false, message: "htmlContent is required (string)" });
+    }
+
+    // fetch Tailwind (best-effort; won't block if CDN fails)
+    let tailwindCSS = "";
+    try {
+      const r = await fetch(
+        "https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css",
+        { cache: "no-store" }
+      );
+      tailwindCSS = await r.text();
+    } catch { /* ignore */ }
+
+    const fullStyledHtml = `
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet" />
+          <style>
+            @page { margin: 10px; }
+            body { font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+            ${tailwindCSS}
+          </style>
+        </head>
+        <body>${htmlContent}</body>
+      </html>
+    `;
+
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      // no executablePath: let Puppeteer pick the right Chromium on each OS
+    });
+
+    const page = await browser.newPage();
+
+    // avoid networkidle0 stalls
+    await page.setContent(fullStyledHtml, { waitUntil: "domcontentloaded", timeout: 60000 });
+
+    // wait for images, but cap wait so it never hangs
+    await page.evaluate(async () => {
+      const imgs = Array.from(document.images);
+      const waitAll = Promise.all(
+        imgs.map(img =>
+          img.complete
+            ? Promise.resolve()
+            : new Promise(r => { img.onload = img.onerror = r; })
+        )
+      );
+      const cap = new Promise(r => setTimeout(r, 4000));
+      await Promise.race([waitAll, cap]);
+    });
+
+    const pdfBuffer = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      landscape: orientation === "landscape",
+      margin: { top: "10px", bottom: "10px", left: "10px", right: "10px" },
+    });
+
+    await browser.close();
+
+    const safeName = String(pdfFilename || "report").replace(/[\\/:*?"<>|]+/g, "_");
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${safeName}.pdf"`);
+    res.end(pdfBuffer, "binary");
+  } catch (error) {
+    console.error("Error generating PDF:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while generating the PDF",
+      error: String(error),
+    });
   }
 };

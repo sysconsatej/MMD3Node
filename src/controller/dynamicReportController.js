@@ -11,8 +11,8 @@ const getFirstRecordset = (raw) =>
   Array.isArray(raw)
     ? raw
     : raw?.recordset ||
-      (Array.isArray(raw?.recordsets) ? raw.recordsets[0] : []) ||
-      [];
+    (Array.isArray(raw?.recordsets) ? raw.recordsets[0] : []) ||
+    [];
 
 const extractJsonString = (row) => {
   if (!row) return null;
@@ -31,7 +31,7 @@ const parseForJsonRecordset = (raw) => {
   if (looksLikeJson(jsonStr)) {
     try {
       return JSON.parse(jsonStr);
-    } catch {}
+    } catch { }
   }
   return rs;
 };
@@ -66,8 +66,8 @@ export const dynamicReportUpdate = async (req, res) => {
   const items = Array.isArray(jsonData)
     ? jsonData
     : jsonData && typeof jsonData === "object"
-    ? [jsonData]
-    : [];
+      ? [jsonData]
+      : [];
 
   if (items.length === 0) {
     return res.status(400).json({
@@ -126,8 +126,8 @@ const execOnceJson = async (spName, uiPayload) => {
     uiPayload === null || uiPayload === undefined
       ? null
       : typeof uiPayload === "string"
-      ? uiPayload
-      : JSON.stringify(uiPayload);
+        ? uiPayload
+        : JSON.stringify(uiPayload);
 
   const sqlText = `EXEC ${spName} @filterCondition = @jsonData`;
   const raw = await executeQuerySpData(sqlText, { jsonData: payload });
@@ -193,8 +193,8 @@ export const getSpData = async (req, res) => {
     const items = Array.isArray(jsonData)
       ? jsonData
       : jsonData && typeof jsonData === "object"
-      ? [jsonData]
-      : [{}];
+        ? [jsonData]
+        : [{}];
 
     if (items.length === 1) {
       const parsed = await execOnceJson(spName, items[0]);
@@ -263,3 +263,53 @@ export const getIgmBlData = async (req, res) => {
     await closeConnection();
   }
 };
+
+export const getBlDataForDO = async (req, res) => {
+  const toInt = (v) => {
+    if (v === undefined || v === null) return null;
+    const n = Number(String(v).trim());
+    return Number.isFinite(n) ? Math.trunc(n) : null;
+  };
+
+  try {
+    await initializeConnection();
+
+    // accept from body or query
+    const rawId = req.body?.id ?? req.query?.id;
+    const rawClientId = req.body?.clientId ?? req.query?.clientId;
+
+    const id = toInt(rawId);
+    const clientId = toInt(rawClientId);
+
+    if (id === null || clientId === null) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Both 'id' and 'clientId' must be numbers (e.g., 5770 and 8).",
+        received: { id: rawId, clientId: rawClientId },
+      });
+    }
+
+    const sqlText = `EXEC dbo.blDataForDO @id = @id, @clientId = @clientId`;
+    const raw = await executeQuerySpData(sqlText, { id, clientId });
+
+    const data = parseForJsonRecordset(raw);
+
+    return res.status(200).json({
+      success: true,
+      spName: "dbo.blDataForDO",
+      count: Array.isArray(data) ? data.length : 0,
+      data,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to execute blDataForDO.",
+      error: err?.message,
+    });
+  } finally {
+    await closeConnection();
+  }
+};
+
+
