@@ -21,7 +21,7 @@
     "nodemailer": "^7.0.6",
     "nodemon": "^3.1.10",
     "pdfkit": "^0.17.2",
-    "puppeteer": "^24.22.3",
+    "puppeteer": "^24.24.0",
     "tls": "^0.0.1",
     "xlsx": "^0.18.5"
   }
