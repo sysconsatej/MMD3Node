@@ -4,9 +4,52 @@ import {
   executeQuerySpData,
 } from "../config/DBConfig.js";
 
+const looksLikeJson = (s) =>
+  typeof s === "string" && !!s.trim() && /^[\[{]/.test(s.trim());
+
+const getFirstRecordset = (raw) =>
+  Array.isArray(raw)
+    ? raw
+    : raw?.recordset ||
+      (Array.isArray(raw?.recordsets) ? raw.recordsets[0] : []) ||
+      [];
+
+const extractJsonString = (row) => {
+  if (!row) return null;
+  const JSON_COL = "JSON_F52E2B61-18A1-11d1-B105-00805F49916B";
+  if (typeof row[JSON_COL] === "string") return row[JSON_COL];
+  const key = Object.keys(row).find(
+    (k) => typeof row[k] === "string" && looksLikeJson(row[k])
+  );
+  return key ? row[key] : null;
+};
+
+const parseForJsonRecordset = (raw) => {
+  const rs = getFirstRecordset(raw);
+  if (!rs?.length) return [];
+  const jsonStr = extractJsonString(rs[0]);
+  if (looksLikeJson(jsonStr)) {
+    try {
+      return JSON.parse(jsonStr);
+    } catch {}
+  }
+  return rs;
+};
+
+const toJsonParam = (input) => {
+  if (input == null) return null;
+  if (typeof input === "string") return input;
+  if (Array.isArray(input)) return input.map(String).join(",");
+  if (typeof input === "object" && typeof input.json === "string")
+    return input.json;
+  if (typeof input === "object" && Array.isArray(input.ids))
+    return input.ids.map(String).join(",");
+  return String(input);
+};
+
 export const dynamicReportUpdate = async (req, res) => {
   const spName = req.body?.spName || req.body?.spname;
-  let { jsonData } = req.body;
+  const { jsonData } = req.body;
 
   if (
     !spName ||
@@ -44,37 +87,12 @@ export const dynamicReportUpdate = async (req, res) => {
         const sqlText = `EXEC ${spName} @json = @jsonData`;
         const raw = await executeQuerySpData(sqlText, { jsonData: payload });
 
-        const recordset = Array.isArray(raw)
-          ? raw
-          : raw?.recordset ||
-            (Array.isArray(raw?.recordsets) && raw.recordsets[0]) ||
-            [];
-        const firstRow = recordset?.[0];
-        const firstColName = firstRow ? Object.keys(firstRow)[0] : null;
-        const maybeJsonStr = firstRow
-          ? firstRow.json ??
-            firstRow.data ??
-            (typeof firstRow[firstColName] === "string"
-              ? firstRow[firstColName]
-              : null)
-          : null;
-
-        let data = null;
-        if (typeof maybeJsonStr === "string") {
-          const t = maybeJsonStr.trim();
-          if (t && /^[\[{]/.test(t)) {
-            try {
-              data = JSON.parse(t);
-            } catch {
-              /* ignore parse error; keep data = null */
-            }
-          }
-        }
+        const data = parseForJsonRecordset(raw);
 
         results.push({
           index: i,
           ok: true,
-          data: data ?? recordset ?? null,
+          data,
           rowsAffected: raw?.rowsAffected ?? null,
         });
       } catch (err) {
@@ -112,34 +130,28 @@ const execOnceJson = async (spName, uiPayload) => {
       : JSON.stringify(uiPayload);
 
   const sqlText = `EXEC ${spName} @filterCondition = @jsonData`;
-  const result = await executeQuerySpData(sqlText, { jsonData: payload });
-  const recordset = Array.isArray(result)
-    ? result
-    : result?.recordset ||
-      (Array.isArray(result?.recordsets) && result.recordsets[0]) ||
-      [];
-
-  if (!recordset || recordset.length === 0) {
+  const raw = await executeQuerySpData(sqlText, { jsonData: payload });
+  const rs = getFirstRecordset(raw);
+  if (!rs?.length) {
     const e = new Error("Stored procedure returned no rows.");
-    e.raw = JSON.stringify(result ?? {});
+    e.raw = JSON.stringify(raw ?? {});
     throw e;
   }
 
-  const row = recordset[0];
-
-  const firstColName = row && Object.keys(row)[0];
+  const row0 = rs[0];
+  const firstColName = row0 && Object.keys(row0)[0];
   const jsonStr =
-    row?.json ??
-    row?.data ??
-    (firstColName && typeof row[firstColName] === "string"
-      ? row[firstColName]
+    row0?.json ??
+    row0?.data ??
+    (firstColName && typeof row0[firstColName] === "string"
+      ? row0[firstColName]
       : null);
 
   if (typeof jsonStr !== "string") {
     const e = new Error(
       "Stored procedure did not return a JSON string in the first row."
     );
-    e.raw = JSON.stringify(row ?? {});
+    e.raw = JSON.stringify(row0 ?? {});
     throw e;
   }
 
@@ -161,15 +173,13 @@ const execOnceJson = async (spName, uiPayload) => {
 
 export const getSpData = async (req, res) => {
   const spName = req.body?.spName || req.body?.spname;
-  let { jsonData } = req.body;
+  const { jsonData } = req.body;
 
-  if (!spName || typeof spName !== "string") {
-    return res.status(400).json({
-      success: false,
-      message: "The 'spName' parameter is required and must be a string.",
-    });
-  }
-  if (!/^[A-Za-z0-9_.]+$/.test(spName)) {
+  if (
+    !spName ||
+    typeof spName !== "string" ||
+    !/^[A-Za-z0-9_.]+$/.test(spName)
+  ) {
     return res.status(400).json({
       success: false,
       message:
@@ -191,17 +201,17 @@ export const getSpData = async (req, res) => {
       return res.status(200).json({ success: true, spName, data: parsed });
     }
 
-    const results = [];
+    const batch = [];
     for (const item of items) {
       const parsed = await execOnceJson(spName, item);
-      results.push(parsed);
+      batch.push(parsed);
     }
     return res.status(200).json({
       success: true,
       spName,
       batch: true,
-      count: results.length,
-      data: results,
+      count: batch.length,
+      data: batch,
     });
   } catch (err) {
     return res.status(500).json({
@@ -209,6 +219,45 @@ export const getSpData = async (req, res) => {
       message: "Error executing stored procedure.",
       error: err.message,
       ...(err.raw ? { raw: err.raw } : {}),
+    });
+  } finally {
+    await closeConnection();
+  }
+};
+
+export const getIgmBlData = async (req, res) => {
+  try {
+    await initializeConnection();
+
+    const body =
+      typeof req.body === "object" && "jsonData" in req.body
+        ? req.body.jsonData
+        : req.body;
+
+    const payload = toJsonParam(body);
+    if (!payload || !String(payload).trim()) {
+      return res.status(400).json({
+        success: false,
+        message:
+          'Provide IDs as { "jsonData": { "json": "5770,5771" } } or { "jsonData": { "ids": [5770,5771] } } or "5770,5771".',
+      });
+    }
+
+    const sqlText = `EXEC igmBldata @json = @jsonData`;
+    const raw = await executeQuerySpData(sqlText, { jsonData: payload });
+
+    const data = parseForJsonRecordset(raw);
+    return res.status(200).json({
+      success: true,
+      spName: "igmBldata",
+      count: Array.isArray(data) ? data.length : 0,
+      data,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to execute igmBldata.",
+      error: err?.message,
     });
   } finally {
     await closeConnection();
