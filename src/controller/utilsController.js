@@ -17,9 +17,6 @@ export const getDropDownValues = async (req, res) => {
     where = "",
     searchColumn = null,
     orderBy = null,
-    selectedCondition = null,
-    selectedCondition1 = null,
-    selectedCondition2 = null,
     filtersJson = null,
   } = req.body;
 
@@ -55,9 +52,6 @@ export const getDropDownValues = async (req, res) => {
       @where=@where,
       @searchColumn=@searchColumn,
       @orderBy=@orderBy,
-      @selectedCondition=@selectedCondition,
-      @selectedCondition1=@selectedCondition1,
-      @selectedCondition2=@selectedCondition2,
       @filtersJson=@filtersJson
   `;
 
@@ -72,9 +66,6 @@ export const getDropDownValues = async (req, res) => {
     where,
     searchColumn,
     orderBy,
-    selectedCondition,
-    selectedCondition1,
-    selectedCondition2,
     filtersJson: filtersJsonStr,
   };
 
