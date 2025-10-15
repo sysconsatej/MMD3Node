@@ -21,7 +21,9 @@ export const getDropDownValues = async (req, res) => {
   } = req.body;
 
   if (!tableName && masterName) {
-    const parts = String(masterName).split(",").map(s => s.trim());
+    const parts = String(masterName)
+      .split(",")
+      .map((s) => s.trim());
     const disp = parts[0] || "name";
     const tblRaw = parts[1] || "tblMasterData";
     const hasAlias = tblRaw.includes(" ");
@@ -38,7 +40,11 @@ export const getDropDownValues = async (req, res) => {
   }
 
   const filtersJsonStr =
-    typeof filtersJson === "string" ? filtersJson : (filtersJson ? JSON.stringify(filtersJson) : null);
+    typeof filtersJson === "string"
+      ? filtersJson
+      : filtersJson
+      ? JSON.stringify(filtersJson)
+      : null;
 
   const query = `
     EXEC getDropdownApi
@@ -100,8 +106,6 @@ export const getDropDownValues = async (req, res) => {
   }
 };
 
-
-
 export const getTableValues = async (req, res) => {
   const { columns, tableName, whereCondition = null, orderBy = 1 } = req.body;
 
@@ -139,9 +143,15 @@ export const getTableValues = async (req, res) => {
 };
 
 export const nextPrevData = async (req, res) => {
-  const { formId, orderBy = "id", columnName, tableName } = req.body;
+  const {
+    formId,
+    orderBy = "",
+    columnNames,
+    tableName,
+    groupBy = "",
+  } = req.body;
 
-  if (!formId || !columnName || !tableName) {
+  if (!formId || !columnNames || !tableName) {
     return res.status(400).json({
       message:
         "The 'columnName' or 'formId' or 'tableName' parameter is required",
@@ -151,9 +161,9 @@ export const nextPrevData = async (req, res) => {
   try {
     await initializeConnection();
 
-    const query = `EXEC nextPrevDataApi @formId = @formId, @columnName = @columnName, @tableName = @tableName, @orderBy = @orderBy`;
+    const query = `EXEC nextPrevDataApi @formId = @formId, @columnNames = @columnNames, @tableName = @tableName, @orderBy = @orderBy, @groupBy = @groupBy`;
 
-    const parameters = { formId, columnName, tableName, orderBy };
+    const parameters = { formId, columnNames, tableName, orderBy, groupBy };
 
     const result = await executeQuery(query, parameters);
 
