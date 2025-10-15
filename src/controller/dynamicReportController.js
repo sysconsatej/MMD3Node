@@ -3,6 +3,7 @@ import {
   closeConnection,
   executeQuerySpData,
 } from "../config/DBConfig.js";
+import puppeteer from "puppeteer";
 
 const looksLikeJson = (s) =>
   typeof s === "string" && !!s.trim() && /^[\[{]/.test(s.trim());
@@ -270,6 +271,8 @@ export const localPDFReports = async (req, res) => {
       htmlContent = "",
       orientation = "portrait",
       pdfFilename = "report",
+      extraStyles = "",
+      cssUrls = []
     } = req.body || {};
 
     // quick sanity checks + debug
