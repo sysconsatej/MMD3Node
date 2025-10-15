@@ -13,6 +13,7 @@ import dynamicReport from "./src/routes/dynamicReportRoute.js";
 import emailPdfReports from "./src/routes/reportsRoute.js";
 import userRoute from "./src/routes/userRoute.js";
 import menuButtonRoute from "./src/routes/menuButtonRoute.js";
+import accessRoute from "./src/routes/menuAccess.route.js";
 
 const app = express();
 app.use(express.json());
@@ -44,10 +45,10 @@ app.use("/api/v1", dynamicReport);
 app.use("/api/v1/reports", emailPdfReports);
 app.use("/api/v1/user", userRoute);
 app.use("/api/v1/menuButton", menuButtonRoute);
+app.use("/api/v1/access", accessRoute);
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
-
 
 export default app;
