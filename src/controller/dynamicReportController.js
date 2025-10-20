@@ -313,8 +313,10 @@ export const localPDFReports = async (req, res) => {
 
     const browser = await puppeteer.launch({
       headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-      // no executablePath: let Puppeteer pick the right Chromium on each OS
+      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+      ...(process.env.NODE_ENV === "production" || process.env.PUPPETEER_EXECUTABLE_PATH
+        ? { executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/chromium" }
+        : {}),
     });
 
     const page = await browser.newPage();
