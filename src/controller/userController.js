@@ -28,7 +28,7 @@ export const loginUser = async (req, res) => {
 
     const key = process.env.JWT_TOKEN;
     const token = jwt.sign({ username: fetchUserFromDb.username }, key, {
-      expiresIn: "1h",
+      expiresIn: 60,
     });
 
     // res.cookie("auth_token", token, {
