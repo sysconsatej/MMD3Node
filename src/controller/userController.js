@@ -5,6 +5,7 @@ const userConst = () =>
     reslove({
       username: "test@gmail.com",
       password: "abc",
+      roleId: 3,
     });
   });
 
@@ -33,7 +34,7 @@ export const loginUser = async (req, res) => {
 
     // res.cookie("auth_token", token, {
     //   httpOnly: true,
-    //   secure: process.env.NODE_ENV === "production", 
+    //   secure: process.env.NODE_ENV === "production",
     //   maxAge: 60 * 60 * 1000,
     //   sameSite: "lax",
     //   path: "/",
@@ -42,7 +43,10 @@ export const loginUser = async (req, res) => {
     return res.status(200).send({
       message: "Login successful",
       token: token,
-      user: { username: fetchUserFromDb?.username },
+      user: {
+        username: fetchUserFromDb?.username,
+        roleId: fetchUserFromDb?.roleId,
+      },
     });
   } catch (err) {
     console.log("Error in loginUser:", err);

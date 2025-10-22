@@ -7,17 +7,19 @@ import {
 export const menuAccess = async (req, res) => {
   try {
     const { roleId, menu_json } = req.body;
+    console.log(menu_json, "[][][");
     if (!roleId) {
       return res.status(400).json({ message: " roleId is required " });
     }
     await initializeConnection();
-    const query = `EXEC  menuAccessApi`;
-    const parameteres = {
-      userId: roleId,
-      menu_json,
+    const query = `EXEC  menuAccessApi  @menu_json=@menu_json, @roleId=@roleId `;
+    const parameters = {
+      roleId: roleId,
+      menu_json: menu_json,
     };
-    const result = await executeQuery(query, parameteres);
-    console.log(result, "[][][][]");
+    const result = await executeQuery(query, parameters);
+    // console.log(result , 'res')
+    return res.status(200).json({ message: "Data Inserted Successfully" });
   } catch (error) {
     return res.status(500).send({ errorMessage: error.message });
   } finally {
@@ -27,22 +29,23 @@ export const menuAccess = async (req, res) => {
 
 export const getMenuAccessDetails = async (req, res) => {
   try {
-    const { roleId } = req.params;
-    if (!roleId) {
-      return res.status(400).json({ message: "roleId is required " });
+    const { roleId, menuName } = req.body;
+    if (!roleId  ||  !menuName) {
+      return res.status(400).json({ message: "RoleId  and MenuName is required " });
     }
 
     await initializeConnection();
-    const query = `EXEC getUserAccessDetails @roleId=${roleId}`;
-    const userAccessDetails = await executeQuery(query);
-    // const data = userAccessDetails
-    //   ? JSON.parse(userAccessDetails)
-    //   : [];
-    console.log();
-
-    return res.status(200).json({
+    const query = `exec getUserAccessDetailsApi @roleId = @roleId , @menuName = @menuName`;
+    const parameters = {
+      roleId: roleId,
+      menuName: menuName,
+    };
+    const userAccessDetails = await executeQuery(query, parameters);
+    const jsonStr = Object.values(userAccessDetails[0])[0];
+    const parsed = JSON.parse(jsonStr);
+    return res.status(200).send({
       message: "Data successfully retrived",
-      data: JSON.parse(userAccessDetails[0]?.["JSON_F52E2B61-18A1-11d1-B105-00805F49916B"]),
+      data: JSON.parse(parsed.data),
     });
   } catch (error) {
     return res.status(500).send({ errorMessage: error.message });

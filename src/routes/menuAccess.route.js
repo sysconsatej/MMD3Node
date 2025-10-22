@@ -4,6 +4,6 @@ import {
   getMenuAccessDetails,
 } from "../controller/menuAccessController.js";
 const router = Router();
-router.get("/:roleId", getMenuAccessDetails);
+router.post("/getByRole", getMenuAccessDetails);
 router.post("/", menuAccess);
 export default router;
