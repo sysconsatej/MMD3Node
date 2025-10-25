@@ -12,6 +12,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "axios": "^1.12.2",
     "cors": "^2.8.5",
     "dotenv": "^17.0.1",
     "express": "^5.1.0",
@@ -21,6 +22,7 @@
     "node-fetch": "^3.3.2",
     "nodemailer": "^7.0.6",
     "nodemon": "^3.1.10",
+    "paytmchecksum": "^1.5.1",
     "pdfkit": "^0.17.2",
     "puppeteer": "^24.24.0",
     "tls": "^0.0.1",

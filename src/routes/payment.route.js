@@ -6,7 +6,7 @@ import {
 
 const router = express.Router();
 
-router.get("/", paymentController);
+router.get("/pay", paymentController);
 router.get("/response", fetchTransaction);
 
 export default router;
