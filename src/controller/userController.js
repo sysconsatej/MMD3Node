@@ -27,6 +27,7 @@ export const loginUser = async (req, res) => {
     const result = await executeQuery(query, parameters);
     const user = result?.[0];
 
+
     if (!user) {
       return res.status(400).send({ message: "Invalid credentials" });
     }
@@ -36,7 +37,7 @@ export const loginUser = async (req, res) => {
       { emailId: user.emailId, roleId: user.roleId },
       key,
       {
-        expiresIn: '10s',
+        expiresIn: '1d',
       }
     );
 
