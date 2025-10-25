@@ -11,18 +11,9 @@ export const loginUser = async (req, res) => {
         .send({ message: "Email and password are required" });
     }
 
-    const query = `
-      SELECT 
-        u.id AS userId,
-        u.emailId,
-        u.password,
-        urm.roleId
-      FROM tblUser AS u
-      LEFT JOIN tblUserRoleMapping AS urm ON u.id = urm.userId
-      WHERE u.emailId = @emailId AND u.password = @password
-    `;
+    const query = `SELECT * from tblUser  WHERE emailId=@emailId AND password=@password`;
 
-    const parameters = { emailId, password };
+    const parameters = { emailId: emailId, password: password };
 
     const result = await executeQuery(query, parameters);
     const user = result?.[0];
@@ -36,7 +27,7 @@ export const loginUser = async (req, res) => {
       { emailId: user.emailId, roleId: user.roleId },
       key,
       {
-        expiresIn: '10s',
+        expiresIn: "10s",
       }
     );
 
@@ -45,7 +36,7 @@ export const loginUser = async (req, res) => {
       token,
       user: {
         emailId: user.emailId,
-        roleId: user.roleId,
+        roleId: user.roleId || 3,
       },
     });
   } catch (err) {
