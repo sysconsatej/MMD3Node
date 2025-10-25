@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { executeQuery } from "../config/DBConfig.js";
+import { executeQuery , initializeConnection , closeConnection } from "../config/DBConfig.js";
 
 export const loginUser = async (req, res) => {
   try {
@@ -23,6 +23,8 @@ export const loginUser = async (req, res) => {
     `;
 
     const parameters = { emailId, password };
+
+    await initializeConnection()
 
     const result = await executeQuery(query, parameters);
     const user = result?.[0];
@@ -52,5 +54,7 @@ export const loginUser = async (req, res) => {
   } catch (err) {
     console.error("Error in loginUser:", err);
     return res.status(500).send({ message: "Internal server error" });
+  }  finally {
+    await closeConnection()
   }
 };

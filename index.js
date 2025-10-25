@@ -15,10 +15,7 @@ import userRoute from "./src/routes/userRoute.js";
 import menuButtonRoute from "./src/routes/menuButtonRoute.js";
 import accessRoute from "./src/routes/menuAccess.route.js";
 import paymentRoutes from "./src/routes/payment.route.js";
-import {
-  initializeConnection,
-  closeConnection,
-} from "./src/config/DBConfig.js";
+
 
 const app = express();
 app.use(express.json());
@@ -34,7 +31,6 @@ app.use((req, res, next) => {
 });
 
 const port = process.env.PORT || 4000;
-await initializeConnection();
 
 app.get("/", (req, res) => {
   res.status(200).json({
@@ -58,13 +54,6 @@ app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
-process.on("SIGINT", async () => {
-  console.log("\nShutting down server...");
-  await closeConnection();
-  server.close(() => {
-    console.log("Server closed. DB connection terminated.");
-    process.exit(0);
-  });
-});
+
 
 export default app;
