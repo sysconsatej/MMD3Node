@@ -1,15 +1,6 @@
 import jwt from "jsonwebtoken";
 import { executeQuery } from "../config/DBConfig.js";
 
-const userConst = () =>
-  new Promise((reslove) => {
-    reslove({
-      username: "test@gmail.com",
-      password: "abc",
-      roleId: 3,
-    });
-  });
-
 export const loginUser = async (req, res) => {
   try {
     const { emailId, password } = req.body;
@@ -45,7 +36,7 @@ export const loginUser = async (req, res) => {
       { emailId: user.emailId, roleId: user.roleId },
       key,
       {
-        expiresIn: "1h",
+        expiresIn: '10s',
       }
     );
 
