@@ -1,5 +1,9 @@
 import jwt from "jsonwebtoken";
-import { executeQuery , initializeConnection , closeConnection } from "../config/DBConfig.js";
+import {
+  executeQuery,
+  initializeConnection,
+  closeConnection,
+} from "../config/DBConfig.js";
 
 export const loginUser = async (req, res) => {
   try {
@@ -16,6 +20,8 @@ export const loginUser = async (req, res) => {
         u.id AS userId,
         u.emailId,
         u.password,
+        u.branchId,
+        u.companyId,
         urm.roleId
       FROM tblUser AS u
       LEFT JOIN tblUserRoleMapping AS urm ON u.id = urm.userId
@@ -24,11 +30,10 @@ export const loginUser = async (req, res) => {
 
     const parameters = { emailId, password };
 
-    await initializeConnection()
+    await initializeConnection();
 
     const result = await executeQuery(query, parameters);
     const user = result?.[0];
-
 
     if (!user) {
       return res.status(400).send({ message: "Invalid credentials" });
@@ -39,7 +44,7 @@ export const loginUser = async (req, res) => {
       { emailId: user.emailId, roleId: user.roleId },
       key,
       {
-        expiresIn: '1d',
+        expiresIn: "1d",
       }
     );
 
@@ -49,12 +54,14 @@ export const loginUser = async (req, res) => {
       user: {
         emailId: user.emailId,
         roleId: user.roleId,
+        companyId: user.companyId,
+        branchId : user.branchId,
       },
     });
   } catch (err) {
     console.error("Error in loginUser:", err);
     return res.status(500).send({ message: "Internal server error" });
-  }  finally {
-    await closeConnection()
+  } finally {
+    await closeConnection();
   }
 };
