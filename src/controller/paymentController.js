@@ -83,9 +83,14 @@ export const paymentController = async (req, res) => {
 
     console.log("Paytm Create Link Response:", data);
 
-    if (data.body.resultInfo.resultStatus === "S") {
+    if (data.body.resultInfo.resultCode === "200") {
       // Redirect user to short URL
-      return res.redirect(data.body.shortUrl);
+      return res
+        .status(200)
+        .json({
+          message: "Payment Link Created SuccessFully",
+          link: data.body.shortUrl,
+        });
     } else {
       res.status(400).send(data.body.resultInfo.resultMessage);
     }
