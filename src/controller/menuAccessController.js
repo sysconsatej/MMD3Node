@@ -30,8 +30,10 @@ export const menuAccess = async (req, res) => {
 export const getMenuAccessDetails = async (req, res) => {
   try {
     const { roleId, menuName } = req.body;
-    if (!roleId  ||  !menuName) {
-      return res.status(400).json({ message: "RoleId  and MenuName is required " });
+    if (!roleId || !menuName) {
+      return res
+        .status(400)
+        .json({ message: "RoleId  and MenuName is required " });
     }
 
     await initializeConnection();
@@ -49,6 +51,50 @@ export const getMenuAccessDetails = async (req, res) => {
     });
   } catch (error) {
     return res.status(500).send({ errorMessage: error.message });
+  } finally {
+    await closeConnection();
+  }
+};
+
+export const getAllAccessRelatedToRole = async (req, res) => {
+  try {
+    const roleId = req.body.roleId;
+
+    await initializeConnection();
+    //     const query = `
+    // SELECT
+    //     ur.menuButtonId,
+    //     ur.accessFlag,
+    //     mb.buttonName,
+    //     mb.menuName
+
+    // FROM
+    //     tblUserAccess ur
+    // JOIN
+    //     tblMenuButton mb ON ur.menuButtonId = mb.id
+    // WHERE
+    //     ur.roleId = ${roleId} `;
+
+    const query = `
+      SELECT 
+        ur.roleId, 
+        ur.menuButtonId,
+        ur.accessFlag,
+        mb.buttonName,
+        mb.menuName
+      FROM 
+        tblUserAccess ur
+      JOIN 
+        tblMenuButton mb ON ur.menuButtonId = mb.id
+      WHERE 
+        ur.roleId = ${roleId}`;
+
+    const result = await executeQuery(query);
+    return res
+      .status(200)
+      .json({ message: "Data retrived successfully", data: result });
+  } catch (err) {
+    return res.status(500).send({ message: err });
   } finally {
     await closeConnection();
   }
