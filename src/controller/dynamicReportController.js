@@ -409,4 +409,102 @@ export const getBlDataForDO = async (req, res) => {
   }
 };
 
+export const execSpJsonUniversal = async (req, res) => {
+  const spName = req.body?.spName || req.body?.spname;
+  const raw = req.body?.jsonData;
+  const pref = (req.body?.paramName || "jsonData").toLowerCase();
+
+  if (!spName || typeof spName !== "string" || !/^[A-Za-z0-9_.]+$/.test(spName)) {
+    return res.status(400).json({
+      success: false,
+      message:
+        "Invalid stored procedure name. Only letters, numbers, underscore, and dot are allowed.",
+    });
+  }
+
+  // normalize payload(s)
+  const items = Array.isArray(raw)
+    ? raw
+    : raw && typeof raw === "object"
+      ? [raw]
+      : [{}]; // always send something
+
+  const paramOrder = [...new Set([pref, "jsonData", "json", "filterCondition"])];
+
+  const looksLikeJson = (s) => typeof s === "string" && !!s.trim() && /^[\[{]/.test(s.trim());
+  const normalize = (rawResult) => {
+    const rs =
+      Array.isArray(rawResult)
+        ? rawResult
+        : rawResult?.recordset ||
+        (Array.isArray(rawResult?.recordsets) ? rawResult.recordsets[0] : []) ||
+        [];
+    if (!Array.isArray(rs) || !rs.length) return [];
+    const row0 = rs[0];
+    const jsonLikeKey = Object.keys(row0 || {}).find(
+      (k) => typeof row0[k] === "string" && looksLikeJson(row0[k])
+    );
+    if (jsonLikeKey) {
+      try {
+        return JSON.parse(row0[jsonLikeKey]);
+      } catch {
+        // fall through to return the raw recordset if JSON parse fails
+      }
+    }
+    return rs;
+  };
+
+  const callOnce = async (payloadObj) => {
+    const p = JSON.stringify(payloadObj || {});
+    let lastErr = null;
+
+    for (const name of paramOrder) {
+      const sql = `EXEC ${spName} @${name} = @p`;
+      try {
+        const raw = await executeQuerySpData(sql, { p });
+        return { ok: true, data: normalize(raw) };
+      } catch (err) {
+        lastErr = err;
+        // if it looks like a missing-parameter error, try next param name
+        const msg = String(err?.message || "").toLowerCase();
+        if (/@json|@jsondata|@filtercondition/.test(msg) && /expects parameter/.test(msg)) {
+          continue;
+        }
+        // other SQL errors: stop immediately
+        throw err;
+      }
+    }
+    // none of the names worked
+    const tried = paramOrder.map((n) => "@" + n).join(", ");
+    const e = new Error(`Stored procedure '${spName}' did not accept any of ${tried}.`);
+    e.cause = lastErr;
+    throw e;
+  };
+
+  try {
+    await initializeConnection();
+
+    if (items.length === 1) {
+      const out = await callOnce(items[0]);
+      return res.status(200).json({ success: true, spName, data: out.data });
+    }
+
+    const batch = [];
+    for (const item of items) {
+      const out = await callOnce(item);
+      batch.push(out.data);
+    }
+    return res
+      .status(200)
+      .json({ success: true, spName, batch: true, count: batch.length, data: batch });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Error executing stored procedure.",
+      error: err?.message || "Unknown error",
+    });
+  } finally {
+    await closeConnection();
+  }
+};
 
