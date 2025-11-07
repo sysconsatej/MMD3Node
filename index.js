@@ -16,6 +16,8 @@ import menuButtonRoute from "./src/routes/menuButtonRoute.js";
 import accessRoute from "./src/routes/menuAccess.route.js";
 import paymentRoutes from "./src/routes/payment.route.js";
 import insertExternalDataApi from "./src/routes/inserteExternalDataRoute.js";
+import uploadRoute from "./src/routes/uploadRoute.js";
+
 const app = express();
 app.use(express.json());
 app.use(cors());
@@ -48,6 +50,9 @@ app.use("/api/v1/user", userRoute);
 app.use("/api/v1/menuButton", menuButtonRoute);
 app.use("/api/v1/access", accessRoute);
 app.use("/api/v1/payment", paymentRoutes);
+app.use("/api/v1", uploadRoute);
+
+
 app.use("/api/v1", insertExternalDataApi);
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

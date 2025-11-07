@@ -16,15 +16,20 @@ export const loginUser = async (req, res) => {
     }
 
     const query = `
-      SELECT 
+      SELECT
+        u.name as userName,
         u.id AS userId,
         u.emailId,
         u.password,
         u.branchId,
         u.companyId,
-        urm.roleId
+        urm.roleId,
+        r.name AS roleName,
+        c.name as companyName
       FROM tblUser AS u
       LEFT JOIN tblUserRoleMapping AS urm ON u.id = urm.userId
+      LEFT JOIN tblUser AS r ON urm.roleId = r.id
+      LEFT JOIN tblCompany AS c ON u.companyId = c.id
       WHERE u.emailId = @emailId AND u.password = @password
     `;
 
@@ -56,6 +61,9 @@ export const loginUser = async (req, res) => {
         roleId: user.roleId,
         companyId: user.companyId,
         branchId : user.branchId,
+        userName : user.userName,
+        roleName : user.roleName,
+        companyName : user.companyName,
       },
     });
   } catch (err) {
