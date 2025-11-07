@@ -7,7 +7,7 @@ import {
 
 export const loginUser = async (req, res) => {
   try {
-    const { emailId, password } = req.body;
+    const { emailId, password } = req.query;
 
     if (!emailId || !password) {
       return res
@@ -53,21 +53,39 @@ export const loginUser = async (req, res) => {
       }
     );
 
-    return res.status(200).send({
-      message: "Login successful",
-      token,
-      user: {
-        emailId: user.emailId,
-        roleId: user.roleId,
-        companyId: user.companyId,
-        branchId : user.branchId,
-        userName : user.userName,
-        roleName : user.roleName,
-        companyName : user.companyName,
-      },
+    const userData = {
+      userId: user.userId,
+      userName: user.userName,
+      emailId: user.emailId,
+      roleId: user.roleId,
+      roleName: user.roleName,
+      companyId: user.companyId,
+      companyName: user.companyName,
+      branchId: user.branchId,
+    };
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // true for HTTPS
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
+
+    // User data cookie (not httpOnly, so frontend can access it)
+    res.cookie("user", JSON.stringify(userData), {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    // Redirect to frontend with token + userData encoded
+    const redirectUrl = `http://localhost:3001/home`;
+
+    console.log("Redirecting to:", redirectUrl);
+
+    return res.redirect(redirectUrl);
   } catch (err) {
-    console.error("Error in loginUser:", err);
     return res.status(500).send({ message: "Internal server error" });
   } finally {
     await closeConnection();
