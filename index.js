@@ -48,7 +48,7 @@ app.use("/api/v1/user", userRoute);
 app.use("/api/v1/menuButton", menuButtonRoute);
 app.use("/api/v1/access", accessRoute);
 app.use("/api/v1/payment", paymentRoutes);
-app.use("/api/v1/insertExternalData", insertExternalDataApi);
+app.use("/api/v1", insertExternalDataApi);
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
