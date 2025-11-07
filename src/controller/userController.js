@@ -80,7 +80,10 @@ export const loginUser = async (req, res) => {
     });
 
     // Redirect to frontend with token + userData encoded
-    const redirectUrl = `http://localhost:3001/home`;
+    const redirectUrl =
+      process.env.NODE_ENV === "production"
+        ? `${process.env.FRONT_END_URL_PROD}home`
+        : `${process.env.FRONT_END_URL_STAG}home`;
 
     console.log("Redirecting to:", redirectUrl);
 
