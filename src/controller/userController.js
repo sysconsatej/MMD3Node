@@ -25,11 +25,13 @@ export const loginUser = async (req, res) => {
         u.companyId,
         urm.roleId,
         r.name AS roleName,
-        c.name as companyName
+        c.id as companyId,
+        b.name as branchName
       FROM tblUser AS u
       LEFT JOIN tblUserRoleMapping AS urm ON u.id = urm.userId
       LEFT JOIN tblUser AS r ON urm.roleId = r.id
       LEFT JOIN tblCompany AS c ON u.companyId = c.id
+      LEFT JOIN tblCompanyBranch AS b ON u.branchId = b.id
       WHERE u.emailId = @emailId AND u.password = @password
     `;
 
