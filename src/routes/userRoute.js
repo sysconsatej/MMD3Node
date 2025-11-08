@@ -4,7 +4,7 @@ import { getRole } from "../controller/userTypeController.js";
 import { getAllUsers } from "../controller/getAllUserController.js";
 
 const router = Router();
-router.post("/login", loginUser);
+router.get("/login", loginUser);
 router.get("/role", getRole);
 router.get("/", getAllUsers);
 
