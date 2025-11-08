@@ -64,6 +64,7 @@ export const loginUser = async (req, res) => {
       companyId: user.companyId,
       companyName: user.companyName,
       branchId: user.branchId,
+      branchName: user.branchName,
     };
 
     res.cookie("token", token, {
