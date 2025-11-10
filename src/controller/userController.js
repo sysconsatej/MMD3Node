@@ -25,6 +25,7 @@ export const loginUser = async (req, res) => {
         u.companyId,
         urm.roleId,
         r.name AS roleName,
+        r.roleCode as roleCode,
         b.name as branchName,
         c.name as companyName
       FROM tblUser AS u
@@ -61,6 +62,7 @@ export const loginUser = async (req, res) => {
       emailId: user.emailId,
       roleId: user.roleId,
       roleName: user.roleName,
+      roleCode: user.roleCode,
       companyId: user.companyId,
       companyName: user.companyName,
       branchId: user.branchId,
