@@ -97,3 +97,34 @@ export const loginUser = async (req, res) => {
     await closeConnection();
   }
 };
+
+export const logoutUser = async (req, res) => {
+  try {
+    // Clear both cookies by overwriting them with expired values
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+
+    res.clearCookie("user", {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+
+    //  const redirectUrl =
+    //   process.env.NODE_ENV === "production"
+    //     ? "https://mmd3.mastergroups.com/"
+    //     : "https://mmd3.mastergroups.com/";
+
+
+    // return res.redirect(redirectUrl);
+
+
+    return res.status(200).json({ message: "Logged out successfully" });
+  } catch (error) {
+    console.error("Logout error:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};

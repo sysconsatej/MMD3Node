@@ -19,7 +19,7 @@ import uploadRoute from "./src/routes/uploadRoute.js";
 import insertExternalDataApi from "./src/routes/inserteExternalDataRoute.js";
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({ credentials : true, origin: true }));
 app.use(fileUpload({ createParentPath: true }));
 
 const __filename = fileURLToPath(import.meta.url);
