@@ -17,6 +17,9 @@ import accessRoute from "./src/routes/menuAccess.route.js";
 import paymentRoutes from "./src/routes/payment.route.js";
 import uploadRoute from "./src/routes/uploadRoute.js";
 import insertExternalDataApi from "./src/routes/inserteExternalDataRoute.js";
+import  chartRoute   from  "./src/routes/chart.route.js"; 
+
+
 const app = express();
 app.use(express.json());
 app.use(cors({ credentials : true, origin: true }));
@@ -51,6 +54,7 @@ app.use("/api/v1/access", accessRoute);
 app.use("/api/v1/payment", paymentRoutes);
 app.use("/api/v1", uploadRoute);
 app.use("/api/v1", insertExternalDataApi);
+app.use("/api/v1/charts", chartRoute);
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
