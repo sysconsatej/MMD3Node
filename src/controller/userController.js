@@ -88,8 +88,6 @@ export const loginUser = async (req, res) => {
         ? `${process.env.FRONT_END_URL_PROD}home`
         : `${process.env.FRONT_END_URL_STAG}home`;
 
-    console.log("Redirecting to:", redirectUrl);
-
     return res.redirect(redirectUrl);
   } catch (err) {
     return res.status(500).send({ message: "Internal server error" });
