@@ -7,7 +7,6 @@ import {
 export const menuAccess = async (req, res) => {
   try {
     const { roleId, menu_json } = req.body;
-    console.log(menu_json, "[][][");
     if (!roleId) {
       return res.status(400).json({ message: " roleId is required " });
     }
@@ -18,7 +17,6 @@ export const menuAccess = async (req, res) => {
       menu_json: menu_json,
     };
     const result = await executeQuery(query, parameters);
-    // console.log(result , 'res')
     return res.status(200).json({ message: "Data Inserted Successfully" });
   } catch (error) {
     return res.status(500).send({ errorMessage: error.message });
