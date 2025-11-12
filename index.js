@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import fileUpload from "express-fileupload";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -22,6 +23,7 @@ import  chartRoute   from  "./src/routes/chart.route.js";
 
 const app = express();
 app.use(express.json());
+app.use(cookieParser());
 app.use(cors({ credentials : true, origin: true }));
 app.use(fileUpload({ createParentPath: true }));
 

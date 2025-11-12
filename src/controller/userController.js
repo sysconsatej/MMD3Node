@@ -48,14 +48,25 @@ export const loginUser = async (req, res) => {
     }
 
     const key = process.env.JWT_TOKEN;
+
     const token = jwt.sign(
-      { emailId: user.emailId, roleId: user.roleId },
+      {
+        userId: user.userId,
+        userName: user.userName,
+        emailId: user.emailId,
+        roleId: user.roleId,
+        roleName: user.roleName,
+        roleCode: user.roleCode,
+        companyId: user.companyId,
+        companyName: user.companyName,
+        branchId: user.branchId,
+        branchName: user.branchName,
+      },
       key,
       {
         expiresIn: "1d",
       }
     );
-
     const userData = {
       userId: user.userId,
       userName: user.userName,
@@ -70,7 +81,7 @@ export const loginUser = async (req, res) => {
     };
 
     res.cookie("token", token, {
-      httpOnly: true,
+      httpOnly: process.env.NODE_ENV === "production", // httpOnly in production
       secure: process.env.NODE_ENV === "production", // true for HTTPS
       sameSite: "lax",
       maxAge: 24 * 60 * 60 * 1000, // 1 day
@@ -118,9 +129,7 @@ export const logoutUser = async (req, res) => {
     //     ? "https://mmd3.mastergroups.com/"
     //     : "https://mmd3.mastergroups.com/";
 
-
     // return res.redirect(redirectUrl);
-
 
     return res.status(200).json({ message: "Logged out successfully" });
   } catch (error) {
