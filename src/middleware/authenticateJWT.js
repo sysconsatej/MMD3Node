@@ -1,17 +1,22 @@
+// middleware/authenticateJWT.js
 import jwt from "jsonwebtoken";
 
 export const authenticateJWT = (req, res, next) => {
   const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
+  const token =  req.cookies?.token  ||  authHeader?.split(" ")[1]; // safely get token
 
-  if (token === null)
-    return res.status(401).send({ message: "Please provide token" });
+  if (!token) {
+    return res.status(401).json({ message: "Token missing" });
+  }
 
-  jwt.verify(token, process.env.JWT_TOKEN, (err, user) => {
-    if (err) {
-      return res.status(403).send({ message: "User is Restricted" });
-    }
+  try {
+    const user = jwt.verify(token, process.env.JWT_TOKEN); // standard secret name
     req.user = user;
     next();
-  });
+  } catch (err) {
+    if (err.name === "TokenExpiredError") {
+      return res.status(401).json({ message: "Token expired" });
+    }
+    return res.status(403).json({ message: "Invalid token" });
+  }
 };

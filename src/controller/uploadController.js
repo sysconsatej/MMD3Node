@@ -1,89 +1,118 @@
 // controllers/uploadToSp.js
-import { initializeConnection, executeQuerySpData } from "../config/DBConfig.js";
+import {
+  initializeConnection,
+  executeQuerySpData,
+} from "../config/DBConfig.js";
 
-const VALID_SP = /^[A-Za-z0-9_.\[\]]+$/;
+// Allow proc / dbo.proc / db.dbo.proc (letters, digits, underscores)
+const VALID_SP =
+  /^(?:[A-Za-z_][A-Za-z0-9_]*)(?:\.[A-Za-z_][A-Za-z0-9_]*){0,2}$/;
 
-const safeParse = (t) => { try { return typeof t === "string" ? JSON.parse(t) : t; } catch { return {}; } };
+// Bracket-qualify each identifier part to avoid injection via names
+const qualify = (name) =>
+  name
+    .split(".")
+    .map((p) => `[${p}]`)
+    .join(".");
 
-const parseForJsonPath = (result) => {
-    const rs = result?.recordset;
-    if (Array.isArray(rs) && rs.length) {
-        const first = rs[0];
-        const jsonCol = Object.keys(first).find(
-            (k) => k.startsWith("JSON_") || k === "JSON_F52E2B61-18A1-11d1-B105-00805F49916B"
-        );
-        if (jsonCol) {
-            try { return JSON.parse(first[jsonCol] || "[]"); } catch { }
-        }
-        return rs;
+// Try to parse FOR JSON PATH outputs
+const parseJsonish = (result) => {
+  const tryParse = (v) => {
+    if (typeof v !== "string") return null;
+    const s = v.trim();
+    if (!s || (s[0] !== "{" && s[0] !== "[")) return null;
+    try {
+      return JSON.parse(s);
+    } catch {
+      return null;
     }
-    if (Array.isArray(result?.recordsets) && result.recordsets.length) return result.recordsets[0] || [];
-    return [];
+  };
+
+  if (!result) return [];
+
+  // mssql common shapes
+  const rs =
+    result.recordset ||
+    (Array.isArray(result.recordsets) && result.recordsets[0]) ||
+    (Array.isArray(result) ? result : null);
+
+  if (Array.isArray(rs)) {
+    if (rs.length === 1 && rs[0] && typeof rs[0] === "object") {
+      // Look for a JSON-looking column
+      for (const v of Object.values(rs[0])) {
+        const parsed = tryParse(v);
+        if (parsed != null) return parsed;
+      }
+    }
+    return rs; // plain rows
+  }
+
+  // Fallback attempts
+  if (typeof result === "string") {
+    const parsed = tryParse(result);
+    if (parsed != null) return parsed;
+  }
+  if (typeof result === "object") {
+    for (const v of Object.values(result)) {
+      const parsed = tryParse(v);
+      if (parsed != null) return parsed;
+    }
+  }
+  return [];
 };
 
 export const uploadToSp = async (req, res) => {
-    try {
-        const { spName, json } = req.body || {};
-        if (!spName || typeof spName !== "string" || !VALID_SP.test(spName))
-            return res.status(400).send({ success: false, message: "Invalid or missing 'spName'", data: [] });
-        if (typeof json === "undefined")
-            return res.status(400).send({ success: false, message: "Missing 'json' in request body", data: [] });
-
-        await initializeConnection();
-
-        const obj = safeParse(json);
-        const sp = spName.trim();
-
-        if (sp.toLowerCase() === "inputmbl") {
-            // 1) reshape header -> criteria for the SP
-            const header = obj.header || obj.criteria || {};
-            const data = Array.isArray(obj.data) ? obj.data : [];
-
-            const wrapped = {
-                criteria: {
-                    fpdId: header.fpdId ?? null,
-                    podvesselId: header.podvesselId ?? null,
-                    submitterTypeId: header.submitterTypeId ?? null,
-                    consigneeIdNo: header.consigneeIdNo ?? null,
-                },
-                data,
-            };
-
-            // 2) pass the required extra params
-            const params = {
-                json: JSON.stringify(wrapped),
-                createdBy: header.userId ?? header.createdBy ?? 0,
-                clientId: header.clientId ?? 0,
-                companyId: header.companyId ?? 0,
-                companyBranchId: header.companyBranchId ?? 0,
-            };
-
-            const query =
-                `EXEC ${sp} ` +
-                `@json=@json, ` +
-                `@createdBy=@createdBy, @clientId=@clientId, @companyId=@companyId, @companyBranchId=@companyBranchId`;
-
-            const result = await executeQuerySpData(query, params);
-            const payload = parseForJsonPath(result);
-
-            // If SP returned {success,message} forward it; else wrap
-            if (payload && typeof payload === "object" && !Array.isArray(payload) && "success" in payload) {
-                return res.send(payload);
-            }
-            return res.send({ success: true, message: "Executed inputMbl", data: Array.isArray(payload) ? payload : [] });
-        }
-
-        // default: SPs that only expect @json
-        const query = `EXEC ${sp} @json=@json`;
-        const result = await executeQuerySpData(query, { json: typeof json === "string" ? json : JSON.stringify(json) });
-        const dataOut = parseForJsonPath(result);
-        return res.send({
-            success: true,
-            message: Array.isArray(dataOut) && dataOut.length ? "Data fetched successfully" : "No data returned",
-            data: Array.isArray(dataOut) ? dataOut : [],
-        });
-    } catch (error) {
-        console.error("❌ uploadToSp error:", error);
-        return res.status(500).send({ success: false, message: error?.message || "Internal Server Error", data: [] });
+  try {
+    const { spName, json } = req.body || {};
+    console.log(spName);
+    // Basic validation
+    if (!spName || typeof spName !== "string" || !VALID_SP.test(spName)) {
+      return res.status(400).send({
+        success: false,
+        message: "Invalid or missing 'spName'",
+        data: [],
+      });
     }
+    if (typeof json === "undefined") {
+      return res.status(400).send({
+        success: false,
+        message: "Missing 'json' in request body",
+        data: [],
+      });
+    }
+
+    await initializeConnection();
+
+    const sql = `EXEC ${qualify(spName.trim())} @json=@json`;
+    const params = { json: JSON.stringify(json) }; // ← pass the whole object
+
+    const result = await executeQuerySpData(sql, params);
+    const data = parseJsonish(result);
+
+    // If your proc returns a JSON object with {success, message, data}, pass it through
+    if (
+      data &&
+      typeof data === "object" &&
+      !Array.isArray(data) &&
+      "success" in data
+    ) {
+      return res.send(data);
+    }
+
+    return res.send({
+      success: true,
+      message:
+        Array.isArray(data) && data.length
+          ? "Data Inserted successfully"
+          : "No data returned",
+      data: Array.isArray(data) ? data : [],
+    });
+  } catch (err) {
+    console.error("uploadToSp error:", err);
+    return res.status(500).send({
+      success: false,
+      message: err?.message || "Internal Server Error",
+      data: [],
+    });
+  }
 };

@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import fileUpload from "express-fileupload";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -24,6 +25,7 @@ const app = express();
 // app.use(express.json());
 app.use(express.json({ limit: "50mb" })); // increase size of payload
 app.use(express.urlencoded({ limit: "50mb", extended: true })); // increase size of payload
+app.use(cookieParser());
 app.use(cors({ credentials : true, origin: true }));
 app.use(fileUpload({ createParentPath: true }));
 
