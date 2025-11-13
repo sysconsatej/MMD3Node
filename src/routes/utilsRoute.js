@@ -4,12 +4,11 @@ import {
   getTableValues,
   nextPrevData,
 } from "../controller/utilsController.js";
-
+import { authenticateJWT } from "../middleware/authenticateJWT.js";
 const router = express.Router();
 
-router.post("/dropDownValues", getDropDownValues);
-router.post("/getTableValues", getTableValues);
-router.post("/nextPrevData", nextPrevData);
-
+router.post("/dropDownValues", authenticateJWT, getDropDownValues);
+router.post("/getTableValues", authenticateJWT, getTableValues);
+router.post("/nextPrevData", authenticateJWT, nextPrevData);
 
 export default router;

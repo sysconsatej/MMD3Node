@@ -22,7 +22,6 @@ import  chartRoute   from  "./src/routes/chart.route.js";
 
 
 const app = express();
-// app.use(express.json());
 app.use(express.json({ limit: "50mb" })); // increase size of payload
 app.use(express.urlencoded({ limit: "50mb", extended: true })); // increase size of payload
 app.use(cookieParser());
