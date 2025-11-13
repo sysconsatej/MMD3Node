@@ -322,7 +322,8 @@ export const localPDFReports = async (req, res) => {
     const page = await browser.newPage();
 
     // avoid networkidle0 stalls
-    await page.setContent(fullStyledHtml, { waitUntil: "domcontentloaded", timeout: 60000 });
+    //await page.setContent(fullStyledHtml, { waitUntil: "domcontentloaded", timeout: 60000 }); // increased time limit
+    await page.setContent(fullStyledHtml, { waitUntil: "domcontentloaded", timeout: 0 });
 
     // wait for images, but cap wait so it never hangs
     await page.evaluate(async () => {
