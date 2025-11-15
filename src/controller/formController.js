@@ -165,6 +165,34 @@ export const uploadExcel = async (req, res) => {
   try {
     const excelFile = req?.files?.excelFile;
 
+    const keyMap = {
+      "CONTAINER NO": "containerNo",
+      "Seal No.": "sealNo",
+      "ISO Code": "isoCode",
+      "Weight(Kgs)": "weight",
+      "Volume(CBM)": "volume",
+      "NO of Package": "noOfPackages",
+      "Package Type": "packageType",
+    };
+
+    function cleanRow(row) {
+      const cleaned = {};
+
+      for (const key in row) {
+        const value = row[key];
+
+        // Remove all keys starting with __EMPTY
+        if (key.startsWith("__EMPTY")) continue;
+
+        // Skip empty/null/undefined values
+        if (value === "" || value === null || value === undefined) continue;
+        const newKey = keyMap[key];
+        cleaned[newKey] = value;
+      }
+
+      return cleaned;
+    }
+
     if (!excelFile) {
       return res.status(400).json({
         success: false,
@@ -175,8 +203,15 @@ export const uploadExcel = async (req, res) => {
     const workbook = xlsx.read(excelFile.data, { type: "buffer" });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    const data = xlsx.utils.sheet_to_json(worksheet);
+    let data = xlsx.utils.sheet_to_json(worksheet, { defval: "" });
 
+    // Remove rows where all values are empty
+    data = data.filter((row) => Object.values(row).some((v) => v));
+
+    // Remove __EMPTY keys and empty values
+    const cleanedData = data
+      .map((row) => cleanRow(row))
+      .filter((r) => Object.keys(r).length > 0);
     // await initializeConnection();
 
     // const payload = {
@@ -193,7 +228,7 @@ export const uploadExcel = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "excel upload successfully!",
-      result: data,
+      result: cleanedData,
     });
   } catch (err) {
     return res.status(500).json({
