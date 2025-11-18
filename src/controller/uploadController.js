@@ -2,6 +2,8 @@
 import {
   initializeConnection,
   executeQuerySpData,
+  executeQuery,
+  closeConnection,
 } from "../config/DBConfig.js";
 
 // Allow proc / dbo.proc / db.dbo.proc (letters, digits, underscores)
@@ -114,5 +116,43 @@ export const uploadToSp = async (req, res) => {
       message: err?.message || "Internal Server Error",
       data: [],
     });
+  }
+};
+
+// upload invoiceUpload api
+export const invoiceUploadPDF = async (req, res) => {
+  try {
+    const { spName, json } = req.body;
+
+    if (!spName || !json) {
+      return res
+        .status(400)
+        .send({ message: "SpName and Json data are required" });
+    }
+
+    await initializeConnection();
+    // query
+    const query = `EXEC insertInvoiceDataFromPdf @json=@json`;
+
+    const params = { spName: spName, json: json };
+
+    const result = await executeQuery(query, params);
+
+    console.log(result);
+
+    return res.send({
+      success: true,
+      message: "Data Inserted successfully",
+      data: [], // for now
+    });
+  } catch (err) {
+    console.error("uploadToSp error:", err);
+    return res.status(500).send({
+      success: false,
+      message: err?.message || "Internal Server Error",
+      data: [],
+    });
+  } finally {
+    await closeConnection();
   }
 };
