@@ -161,139 +161,6 @@ export const deleteRecord = async (req, res) => {
   }
 };
 
-// export const uploadExcel = async (req, res) => {
-//   await initializeConnection();
-//   try {
-//     const excelFile = req?.files?.excelFile;
-
-//     if (!excelFile) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Missing required fields: 'excelFile'",
-//       });
-//     }
-
-//     const keyMap = {
-//       "CONTAINER NO": "containerNo",
-//       "Cargo Gross Wt(Kgs)": "grossWt",
-//       "ISO Code": "isoCode",
-//       "Weight(Kgs)": "weight",
-//       "Volume(CBM)": "volume",
-//       "NO of Package": "noOfPackages",
-//       "Package Type": "packageId",
-//       "Size" :  "sizeId",
-//     };
-
-//     function cleanRow(row) {
-//       const cleaned = {};
-//       for (const key in row) {
-//         const value = row[key];
-//         if (key.startsWith("__EMPTY")) continue;
-//         if (value === "" || value == null) continue;
-
-//         const newKey = keyMap[key];
-//         if (newKey) cleaned[newKey] = value;
-//       }
-//       return cleaned;
-//     }
-
-//     // Read excel
-//     const workbook = xlsx.read(excelFile.data, { type: "buffer" });
-//     const sheetName = workbook.SheetNames[0];
-//     const worksheet = workbook.Sheets[sheetName];
-//     let data = xlsx.utils.sheet_to_json(worksheet, { defval: "" });
-
-//     data = data.filter((row) => Object.values(row).some((v) => v));
-
-//     const cleanedData = data
-//       .map((row) => cleanRow(row))
-//       .filter((r) => Object.keys(r).length > 0);
-
-//     const extractCode = (val) => {
-//       return val?.toString().split("-")[0]?.trim();
-//     };
-
-//     const packageCodes = new Set();
-//     const sizeCodes = new Set();
-
-//     for (const row of cleanedData) {
-//       if (row.packageId) packageCodes.add(extractCode(row.packageId));
-//     }
-
-//     const pkgArr = [...packageCodes];
-//     const sizeArr = [...sizeCodes];
-
-//     const allCodes = [...pkgArr, ...sizeArr];
-
-//     if (allCodes.length > 0) {
-//       const params = {};
-
-//       pkgArr.forEach((code, i) => (params[`pkg${i}`] = code));
-//       sizeArr.forEach((code, i) => (params[`size${i}`] = code));
-
-//       const query = `
-//   SELECT id, code, name, masterListName
-//   FROM tblMasterData
-//   WHERE
-//     (
-//       masterListName = 'tblPackage'
-//       AND principalCode IS NULL
-//       AND code IN (${pkgArr.map((_, i) => `@pkg${i}`).join(",")})
-//     )
-//    OR
-//     (
-//       masterListName = "tblSize"
-//       AND code IN (${sizeArr.map((_, i) => `@size${i}`).join(",")})
-//    )
-
-//     `;
-
-//       const rows = await executeQuery(query, params);
-
-//       const packageMap = {};
-//       const  sizeMap = {};
-
-//       for (const row of rows) {
-//         const entry = { Id: row.id, Name: row.name };
-
-//         if (row.masterListName === "tblPackage") {
-//           packageMap[row.code] = entry;
-//         }
-//         if(row.masterListName === "tblSize"){
-//           sizeMap[row.code] = entry;
-//         }
-//       }
-
-//       for (const row of cleanedData) {
-//         if (row.packageId) {
-//           const code = extractCode(row.packageId);
-//           console.log("package code", code, { ...packageMap[code] });
-//           row.packageId = packageMap[code] || {};
-//         }
-
-//         if (row.sizeId) {
-//           const code = extractCode(row.sizeId);
-//           row.sizeId = sizeMap[code] || {};
-//         }
-//       }
-//     }
-
-//     return res.status(200).json({
-//       success: true,
-//       message: "Excel uploaded successfully!",
-//       result: cleanedData,
-//     });
-//   } catch (err) {
-//     return res.status(500).json({
-//       success: false,
-//       message: "Error executing uploadExcel API",
-//       error: err.message,
-//     });
-//   } finally {
-//     await closeConnection();
-//   }
-// };
-
 export const uploadExcel = async (req, res) => {
   await initializeConnection();
   try {
@@ -319,7 +186,7 @@ export const uploadExcel = async (req, res) => {
       "Package Type": "packageId",
       "Size": "sizeId",
       "Type": "typeId",
-      "ISO Code" : "isoCode"
+      "ISO Code": "isoCode",
     };
 
     const cleanRow = (row) => {
@@ -370,8 +237,6 @@ export const uploadExcel = async (req, res) => {
     const sizeArr = [...sizeCodes];
     const typeArr = [...typeCodes];
 
-    console.log(typeArr, "[][][[]");
-
     // If no codes to lookup, skip DB query
     if (pkgArr.length > 0 || sizeArr.length > 0) {
       const params = {};
@@ -410,8 +275,6 @@ export const uploadExcel = async (req, res) => {
 
       const dbRows = await executeQuery(query, params);
 
-      console.log(dbRows);
-
       // ----------------------------------------
       // 4️⃣ Build Maps
       // ----------------------------------------
@@ -440,6 +303,12 @@ export const uploadExcel = async (req, res) => {
         if (row.typeId) {
           const code = extractCode(row?.typeId);
           row.typeId = typeMap[code] || {};
+        }
+        if (row?.typeId && row?.sizeId) {
+          const isoParams = { sizeId: row.sizeId?.Id, typeId: row?.typeId?.Id };
+          const isoQuery = `SELECT id as Id , isocode as Name from tblIsocode where sizeId = ${isoParams?.sizeId} AND typeId = ${isoParams.typeId}`;
+          const result = await executeQuery(isoQuery);
+          row.isoCode = result[0];
         }
       }
     }
