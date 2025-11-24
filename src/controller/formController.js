@@ -137,8 +137,8 @@ export const deleteRecord = async (req, res) => {
     const payload = {
       tableName,
       recordId,
-      updatedBy,
-      updatedDate,
+      updatedBy  : req?.body?.updatedBy ? req?.body?.updatedBy :  req?.user?.updatedBy,
+      updatedDate  : req?.body?.updatedDate ? req?.body?.updatedDate :  req?.user?.updatedDate,
     };
 
     const query = `EXEC deleteRecordApi @recordId = @recordId, @tableName = @tableName , @updatedBy=@updatedBy , @updatedDate=@updatedDate`;
