@@ -123,7 +123,7 @@ export const fetchForm = async (req, res) => {
 
 export const deleteRecord = async (req, res) => {
   try {
-    const { recordId, tableName } = req.body;
+    const { recordId, tableName , updatedBy  , updatedDate } = req.body;
 
     if (!tableName || !recordId) {
       return res.status(400).json({
@@ -137,9 +137,11 @@ export const deleteRecord = async (req, res) => {
     const payload = {
       tableName,
       recordId,
+      updatedBy,
+      updatedDate,
     };
 
-    const query = `EXEC deleteRecordApi @recordId = @recordId, @tableName = @tableName`;
+    const query = `EXEC deleteRecordApi @recordId = @recordId, @tableName = @tableName , @updatedBy=@updatedBy , @updatedDate=@updatedDate`;
     const result = await executeQuery(query, payload);
 
     const jsonStr = Object.values(result[0])[0];
@@ -184,8 +186,8 @@ export const uploadExcel = async (req, res) => {
       "Volume(CBM)": "volume",
       "NO of Package": "noOfPackages",
       "Package Type": "packageId",
-      "Size": "sizeId",
-      "Type": "typeId",
+      Size: "sizeId",
+      Type: "typeId",
       "ISO Code": "isoCode",
     };
 
