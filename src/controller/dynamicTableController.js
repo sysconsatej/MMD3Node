@@ -1,7 +1,5 @@
 import {
-  closeConnection,
   executeQuery,
-  initializeConnection,
 } from "../config/DBConfig.js";
 
 export const getDynamicTable = async (req, res) => {
@@ -25,7 +23,7 @@ export const getDynamicTable = async (req, res) => {
   }
 
   try {
-    await initializeConnection();
+    //
 
     const query = `EXEC searchTableApi @columns = @columns, @tableName = @tableName, @joins = @joins, @searchColumn = @searchColumn, @searchValue = @searchValue, @pageNo = @pageNo, @pageSize = @pageSize, @advanceSearch = @advanceSearch, @orderBy = @orderBy, @groupBy = @groupBy`;
 
@@ -59,7 +57,5 @@ export const getDynamicTable = async (req, res) => {
       message: "Error executing master API",
       error: err.message,
     });
-  } finally {
-    await closeConnection();
-  }
+  } 
 };

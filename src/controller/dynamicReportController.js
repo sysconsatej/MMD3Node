@@ -1,6 +1,5 @@
 import {
-  initializeConnection,
-  closeConnection,
+
   executeQuerySpData,
 } from "../config/DBConfig.js";
 import puppeteer from "puppeteer";
@@ -79,7 +78,7 @@ export const dynamicReportUpdate = async (req, res) => {
   }
 
   try {
-    await initializeConnection();
+    //
 
     const results = [];
     for (let i = 0; i < items.length; i++) {
@@ -117,9 +116,7 @@ export const dynamicReportUpdate = async (req, res) => {
       message: "Failed to execute stored procedure.",
       error: err?.message,
     });
-  } finally {
-    await closeConnection();
-  }
+  } 
 };
 
 const execOnceJson = async (spName, uiPayload) => {
@@ -189,7 +186,7 @@ export const getSpData = async (req, res) => {
   }
 
   try {
-    await initializeConnection();
+    //
 
     const items = Array.isArray(jsonData)
       ? jsonData
@@ -221,14 +218,12 @@ export const getSpData = async (req, res) => {
       error: err.message,
       ...(err.raw ? { raw: err.raw } : {}),
     });
-  } finally {
-    await closeConnection();
-  }
+  } 
 };
 
 export const getIgmBlData = async (req, res) => {
   try {
-    await initializeConnection();
+    //
 
     const body =
       typeof req.body === "object" && "jsonData" in req.body
@@ -260,9 +255,7 @@ export const getIgmBlData = async (req, res) => {
       message: "Failed to execute igmBldata.",
       error: err?.message,
     });
-  } finally {
-    await closeConnection();
-  }
+  } 
 };
 
 export const localPDFReports = async (req, res) => {
@@ -370,7 +363,7 @@ export const getBlDataForDO = async (req, res) => {
   };
 
   try {
-    await initializeConnection();
+    //
 
     // accept from body or query
     const rawId = req.body?.id ?? req.query?.id;
@@ -405,9 +398,7 @@ export const getBlDataForDO = async (req, res) => {
       message: "Failed to execute blDataForDO.",
       error: err?.message,
     });
-  } finally {
-    await closeConnection();
-  }
+  } 
 };
 
 export const execSpJsonUniversal = async (req, res) => {
@@ -483,7 +474,7 @@ export const execSpJsonUniversal = async (req, res) => {
   };
 
   try {
-    await initializeConnection();
+    //
 
     if (items.length === 1) {
       const out = await callOnce(items[0]);
@@ -504,8 +495,6 @@ export const execSpJsonUniversal = async (req, res) => {
       message: "Error executing stored procedure.",
       error: err?.message || "Unknown error",
     });
-  } finally {
-    await closeConnection();
-  }
+  } 
 };
 

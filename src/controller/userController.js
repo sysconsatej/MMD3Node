@@ -1,8 +1,6 @@
 import jwt from "jsonwebtoken";
 import {
   executeQuery,
-  initializeConnection,
-  closeConnection,
 } from "../config/DBConfig.js";
 
 export const loginUser = async (req, res) => {
@@ -38,7 +36,6 @@ export const loginUser = async (req, res) => {
 
     const parameters = { emailId, password };
 
-    await initializeConnection();
 
     const result = await executeQuery(query, parameters);
     const user = result?.[0];
@@ -104,8 +101,6 @@ export const loginUser = async (req, res) => {
     return res.redirect(redirectUrl);
   } catch (err) {
     return res.status(500).send({ message: "Internal server error" });
-  } finally {
-    await closeConnection();
   }
 };
 

@@ -76,7 +76,6 @@ export const getDropDownValues = async (req, res) => {
   };
 
   try {
-    await initializeConnection();
 
     const result = await executeQuery(query, parameters);
 
@@ -101,8 +100,6 @@ export const getDropDownValues = async (req, res) => {
       message: "Error executing dropdown API",
       error: err.message,
     });
-  } finally {
-    await closeConnection();
   }
 };
 
@@ -122,7 +119,6 @@ export const getTableValues = async (req, res) => {
   }
 
   try {
-    await initializeConnection();
 
     const query = `EXEC getDataApi @columns = @columns, @tableName = @tableName, @whereCondition = @whereCondition, @orderBy = @orderBy, @joins = @joins`;
 
@@ -143,8 +139,6 @@ export const getTableValues = async (req, res) => {
       message: "Error executing getDataApi API",
       error: err.message,
     });
-  } finally {
-    await closeConnection();
   }
 };
 
@@ -165,7 +159,6 @@ export const nextPrevData = async (req, res) => {
   }
 
   try {
-    await initializeConnection();
 
     const query = `EXEC nextPrevDataApi @formId = @formId, @columnNames = @columnNames, @tableName = @tableName, @orderBy = @orderBy, @groupBy = @groupBy`;
 
@@ -184,7 +177,5 @@ export const nextPrevData = async (req, res) => {
       message: "Error executing nextPrevDataApi API",
       error: err.message,
     });
-  } finally {
-    await closeConnection();
-  }
+  } 
 };

@@ -1,7 +1,5 @@
 import {
-  closeConnection,
   executeQuery,
-  initializeConnection,
 } from "../config/DBConfig.js";
 import xlsx from "xlsx";
 
@@ -21,7 +19,7 @@ export const insertUpdate = async (req, res) => {
       });
     }
 
-    await initializeConnection();
+    //
 
     const parameters = {
       tableName,
@@ -68,9 +66,7 @@ export const insertUpdate = async (req, res) => {
       message: "Error executing dynamicMultiSubmit",
       error: err.message,
     });
-  } finally {
-    await closeConnection();
-  }
+  } 
 };
 
 export const fetchForm = async (req, res) => {
@@ -90,7 +86,7 @@ export const fetchForm = async (req, res) => {
       });
     }
 
-    await initializeConnection();
+    //
 
     const payload = {
       dropdownFields: JSON.stringify(dropdownFields),
@@ -116,9 +112,7 @@ export const fetchForm = async (req, res) => {
       message: "Error executing fetchFormDataApi",
       error: err.message,
     });
-  } finally {
-    await closeConnection();
-  }
+  } 
 };
 
 export const deleteRecord = async (req, res) => {
@@ -132,7 +126,7 @@ export const deleteRecord = async (req, res) => {
       });
     }
 
-    await initializeConnection();
+    //
 
     const payload = {
       tableName,
@@ -158,13 +152,11 @@ export const deleteRecord = async (req, res) => {
       message: "Error executing deleteRecordApi",
       error: err.message,
     });
-  } finally {
-    await closeConnection();
-  }
+  } 
 };
 
 export const uploadExcel = async (req, res) => {
-  await initializeConnection();
+  //
   try {
     const excelFile = req?.files?.excelFile;
 
@@ -329,7 +321,5 @@ export const uploadExcel = async (req, res) => {
       message: "Error executing uploadExcel API",
       error: err.message,
     });
-  } finally {
-    await closeConnection();
-  }
+  } 
 };

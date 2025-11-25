@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import fileUpload from "express-fileupload";
 import path from "path";
 import { fileURLToPath } from "url";
+import { initializeConnection, closeConnection } from "./src/config/DBConfig.js"
 
 import dropDownValuesRoute from "./src/routes/utilsRoute.js";
 import dynamicTableRoute from "./src/routes/dynamicTableRoute.js";
@@ -18,14 +19,24 @@ import accessRoute from "./src/routes/menuAccess.route.js";
 import paymentRoutes from "./src/routes/payment.route.js";
 import uploadRoute from "./src/routes/uploadRoute.js";
 import insertExternalDataApi from "./src/routes/inserteExternalDataRoute.js";
-import  chartRoute   from  "./src/routes/chart.route.js"; 
+import chartRoute from "./src/routes/chart.route.js";
 
+
+
+initializeConnection()
+  .then(() => {
+    console.log("Database connection established");
+  })
+  .catch((err) => {
+    console.error("Error connecting to the database:", err);
+    process.exit(1); // Exit the application if the connection fails
+  });
 
 const app = express();
 app.use(express.json({ limit: "50mb" })); // increase size of payload
 app.use(express.urlencoded({ limit: "50mb", extended: true })); // increase size of payload
 app.use(cookieParser());
-app.use(cors({ credentials : true, origin: true }));
+app.use(cors({ credentials: true, origin: true }));
 app.use(fileUpload({ createParentPath: true }));
 
 const __filename = fileURLToPath(import.meta.url);
@@ -62,6 +73,29 @@ app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
+process.on("SIGTERM", async () => {
+  console.log("SIGTERM signal received: closing HTTP server");
+  server.close(() => {
+    console.log("HTTP server closed");
+  });
 
+  await closeConnection();
+  console.log("Database connection closed");
+
+  process.exit(0);
+});
+
+// If using SIGINT (Ctrl+C) in terminal
+process.on("SIGINT", async () => {
+  console.log("SIGINT signal received: closing HTTP server");
+  server.close(() => {
+    console.log("HTTP server closed");
+  });
+
+  await closeConnection();
+  console.log("Database connection closed");
+
+  process.exit(0);
+});
 
 export default app;

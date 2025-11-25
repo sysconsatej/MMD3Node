@@ -1,7 +1,5 @@
 import {
-  closeConnection,
   executeQuery,
-  initializeConnection,
 } from "../config/DBConfig.js";
 
 export const menuAccess = async (req, res) => {
@@ -10,7 +8,7 @@ export const menuAccess = async (req, res) => {
     if (!roleId) {
       return res.status(400).json({ message: " roleId is required " });
     }
-    await initializeConnection();
+    //
     const query = `EXEC  menuAccessApi  @menu_json=@menu_json, @roleId=@roleId `;
     const parameters = {
       roleId: roleId,
@@ -20,9 +18,7 @@ export const menuAccess = async (req, res) => {
     return res.status(200).json({ message: "Data Inserted Successfully" });
   } catch (error) {
     return res.status(500).send({ errorMessage: error.message });
-  } finally {
-    await closeConnection();
-  }
+  } 
 };
 
 export const getMenuAccessDetails = async (req, res) => {
@@ -34,7 +30,7 @@ export const getMenuAccessDetails = async (req, res) => {
         .json({ message: "RoleId  and MenuName is required " });
     }
 
-    await initializeConnection();
+    //
     const query = `exec getUserAccessDetailsApi @roleId = @roleId , @menuName = @menuName`;
     const parameters = {
       roleId: roleId,
@@ -49,16 +45,14 @@ export const getMenuAccessDetails = async (req, res) => {
     });
   } catch (error) {
     return res.status(500).send({ errorMessage: error.message });
-  } finally {
-    await closeConnection();
-  }
+  } 
 };
 
 export const getAllAccessRelatedToRole = async (req, res) => {
   try {
     const roleId = req.body.roleId;
 
-    await initializeConnection();
+    //
     //     const query = `
     // SELECT
     //     ur.menuButtonId,
@@ -127,9 +121,7 @@ export const getAllAccessRelatedToRole = async (req, res) => {
       .json({ message: "Data retrived successfully", data: s });
   } catch (err) {
     return res.status(500).send({ message: err });
-  } finally {
-    await closeConnection();
-  }
+  } 
 };
 
 

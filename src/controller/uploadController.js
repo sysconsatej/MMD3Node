@@ -1,9 +1,7 @@
 // controllers/uploadToSp.js
 import {
-  initializeConnection,
   executeQuerySpData,
   executeQuery,
-  closeConnection,
 } from "../config/DBConfig.js";
 
 // Allow proc / dbo.proc / db.dbo.proc (letters, digits, underscores)
@@ -83,7 +81,6 @@ export const uploadToSp = async (req, res) => {
       });
     }
 
-    await initializeConnection();
 
     const sql = `EXEC ${qualify(spName.trim())} @json=@json`;
     const params = { json: JSON.stringify(json) }; // ← pass the whole object
@@ -130,7 +127,6 @@ export const invoiceUploadPDF = async (req, res) => {
         .send({ message: "SpName and Json data are required" });
     }
 
-    await initializeConnection();
     // query
     const query = `EXEC insertInvoiceDataFromPdf @json=@json`;
 
@@ -152,7 +148,5 @@ export const invoiceUploadPDF = async (req, res) => {
       message: err?.message || "Internal Server Error",
       data: [],
     });
-  } finally {
-    await closeConnection();
-  }
+  } 
 };

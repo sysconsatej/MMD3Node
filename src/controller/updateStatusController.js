@@ -1,7 +1,5 @@
 import {
-  initializeConnection,
   executeQuery,
-  closeConnection,
 } from "../config/DBConfig.js";
 
 // tiny helper to parse JSON if a string sneaks in
@@ -35,7 +33,6 @@ export const updateStatus = async (req, res) => {
       });
     }
 
-    await initializeConnection();
 
     // call your SP (your SP handles schema resolution)
     const params = {
@@ -56,7 +53,5 @@ export const updateStatus = async (req, res) => {
       message: "Error executing updatestatusapi",
       error: err?.message || "Unknown error",
     });
-  } finally {
-    await closeConnection();
-  }
+  } 
 };

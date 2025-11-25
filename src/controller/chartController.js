@@ -1,12 +1,10 @@
 import {
-  initializeConnection,
   executeQuery,
-  closeConnection,
 } from "../config/DBConfig.js";
 
 export const getChartData = async (req, res) => {
   try {
-    await initializeConnection();
+    //
     const query = "EXEC companyCountryData @clientId = @clientId";
     const parameters = {
       clientId: 3,  // static clientId as per requirement
@@ -24,7 +22,5 @@ export const getChartData = async (req, res) => {
     return res
       .status(500)
       .json({ success: false, message: "Internal server error" });
-  } finally {
-    await closeConnection();
-  }
+  } 
 };

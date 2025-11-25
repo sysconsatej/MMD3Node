@@ -1,7 +1,5 @@
 import {
-  closeConnection,
   executeQuery,
-  initializeConnection,
 } from "../config/DBConfig.js";
 
 // export const insertExternalData = async (req, res) => {
@@ -17,7 +15,7 @@ import {
 //     }
 
 //     // Initialize DB connection
-//     await initializeConnection();
+//     //
 
 //     // Execute stored procedure
 //     const parameters = { json };
@@ -66,7 +64,7 @@ export const insertExternalData = async (req, res) => {
       });
     }
 
-    await initializeConnection();
+    //
 
     const parameters = { json };
 
@@ -98,9 +96,7 @@ export const insertExternalData = async (req, res) => {
       message: "Error executing insertExternalData",
       error: error.message,
     });
-  } finally {
-    await closeConnection();
-  }
+  } 
 };
 
 
