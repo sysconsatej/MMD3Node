@@ -3,7 +3,7 @@ import PaytmChecksum from "paytmchecksum";
 const MERCHANT_ID = "AiPaRa73056566301905"; // Your Paytm MID
 const MERCHANT_KEY = "@Xt98A0WnPSvXzE6"; // Your Paytm Secret Key
 
-const SUCCESS_REDIRECT_URL = "http://wzccpayment.mastergroups.com/response";
+// const SUCCESS_REDIRECT_URL = "http://wzccpayment.mastergroups.com/response";
 
 export const sendMail = async ({
   amount,
@@ -57,7 +57,7 @@ export const paymentController = async (req, res) => {
     linkType: "FIXED",
     linkDescription: "TestPayment",
     linkName: "TestNodePayment",
-    redirectionUrlSuccess: SUCCESS_REDIRECT_URL,
+    // redirectionUrlSuccess: SUCCESS_REDIRECT_URL,
     amount: Amount,
   };
 
@@ -81,15 +81,16 @@ export const paymentController = async (req, res) => {
       { headers: { "Content-Type": "application/json" } }
     );
 
-    console.log("Paytm Create Link Response:", data);
 
     if (data.body.resultInfo.resultCode === "200") {
+
       // Redirect user to short URL
       return res
         .status(200)
         .json({
           message: "Payment Link Created SuccessFully",
           link: data.body.shortUrl,
+          success :  true,
         });
     } else {
       res.status(400).send(data.body.resultInfo.resultMessage);
@@ -132,26 +133,26 @@ export const fetchTransaction = async (req, res) => {
       { headers: { "Content-Type": "application/json" } }
     );
 
-    console.log("Paytm Fetch Response:", data);
 
     const order = data.body.orders[0];
     const status = order.orderStatus;
     const txnId = order.txnId;
 
     // Send email
-    await sendMail({
-      amount: Amount,
-      username: UserName,
-      txnId,
-      status,
-      orderId: order.orderId,
-    });
+    // await sendMail({
+    //   amount: Amount,
+    //   username: UserName,
+    //   txnId,
+    //   status,
+    //   orderId: order.orderId,
+    // });
 
     res.send({
       message: "Payment status fetched successfully",
       status,
       txnId,
       orderId: order.orderId,
+      userName  : UserName,
     });
   } catch (err) {
     console.error(err);
