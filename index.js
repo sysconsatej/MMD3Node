@@ -5,7 +5,10 @@ import cookieParser from "cookie-parser";
 import fileUpload from "express-fileupload";
 import path from "path";
 import { fileURLToPath } from "url";
-import { initializeConnection, closeConnection } from "./src/config/DBConfig.js"
+import {
+  initializeConnection,
+  closeConnection,
+} from "./src/config/DBConfig.js";
 
 import dropDownValuesRoute from "./src/routes/utilsRoute.js";
 import dynamicTableRoute from "./src/routes/dynamicTableRoute.js";
@@ -20,8 +23,7 @@ import paymentRoutes from "./src/routes/payment.route.js";
 import uploadRoute from "./src/routes/uploadRoute.js";
 import insertExternalDataApi from "./src/routes/inserteExternalDataRoute.js";
 import chartRoute from "./src/routes/chart.route.js";
-
-
+import historyRoutes from "./src/routes/historyRoute.js";
 
 initializeConnection()
   .then(() => {
@@ -69,6 +71,8 @@ app.use("/api/v1/payment", paymentRoutes);
 app.use("/api/v1", uploadRoute);
 app.use("/api/v1", insertExternalDataApi);
 app.use("/api/v1/charts", chartRoute);
+app.use("/api/v1", historyRoutes); // so full path = /api/history
+
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
