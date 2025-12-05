@@ -24,6 +24,7 @@ import uploadRoute from "./src/routes/uploadRoute.js";
 import insertExternalDataApi from "./src/routes/inserteExternalDataRoute.js";
 import chartRoute from "./src/routes/chart.route.js";
 import historyRoutes from "./src/routes/historyRoute.js";
+import blWorkFlow from "./src/routes/bl-workflow.route.js";
 
 initializeConnection()
   .then(() => {
@@ -72,6 +73,7 @@ app.use("/api/v1", uploadRoute);
 app.use("/api/v1", insertExternalDataApi);
 app.use("/api/v1/charts", chartRoute);
 app.use("/api/v1", historyRoutes); // so full path = /api/history
+app.use("/api/v1/blWorkFlow", blWorkFlow);
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
