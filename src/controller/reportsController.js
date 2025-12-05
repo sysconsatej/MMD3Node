@@ -33,6 +33,7 @@ async function getBrowser() {
   if (!BROWSER_PROMISE) {
     BROWSER_PROMISE = await puppeteer.launch({
       headless: "new",
+      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
       ...(process.env.NODE_ENV === "production" ||
       process.env.PUPPETEER_EXECUTABLE_PATH
         ? {
