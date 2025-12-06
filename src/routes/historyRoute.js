@@ -1,13 +1,12 @@
 import express from "express";
-import {
-  getHblColumnChanges,
-  getHistoryData,
-} from "../controller/historyController.js";
+import { getHblColumnChanges, getHistoryData, getInvoiceHistory, getInvoiceReleaseHistoryAPI } from "../controller/historyController.js";
 
 const router = express.Router();
 
 // GET /api/history?tableName=tblBl&id=6283
 router.get("/history", getHistoryData);
+router.get("/history/invoice", getInvoiceHistory);
+router.get("/history/invoiceRelease", getInvoiceReleaseHistoryAPI);
 router.post("/getHblColumnChanges", getHblColumnChanges);
 
 export default router;

@@ -11,21 +11,37 @@ export const getHistoryData = async (req, res) => {
       });
     }
 
+    const recordId = Number(id);
+    if (Number.isNaN(recordId)) {
+      return res.status(400).json({
+        success: false,
+        message: "id must be a valid number",
+      });
+    }
+
     if (!tableName.includes(".")) {
       tableName = `dbo.${tableName}`;
     }
 
-    const recordId = Number(id);
-
     const query = `
-      SELECT *
-      FROM dbo.fn_AuditLogSummary(@tableName, @recordId)
-      ORDER BY EventDate DESC;
+      SELECT
+        t.EventDate AS date,
+        usr.emailId AS loginId,
+        newValue.name AS status
+      FROM dbo.fn_AuditLogSummary(@tableName, @recordId) t
+      LEFT JOIN tblMasterData oldValue ON oldValue.id = t.OldValue
+      LEFT JOIN tblMasterData newValue ON newValue.id = t.NewValue
+      LEFT JOIN tblUser usr ON usr.id = t.UpdatedBy
+      WHERE t.ColumnName = 'hblRequestStatus'
+      ORDER BY t.PrimaryKeyId, t.EventDate, t.ColumnName;
     `;
 
-    const parameters = { tableName, recordId };
+    const params = {
+      tableName,
+      recordId,
+    };
 
-    const data = await executeQuery(query, parameters);
+    const data = await executeQuery(query, params);
 
     let rows = [];
     if (Array.isArray(data) && data[0]?.recordset) {
@@ -43,9 +59,144 @@ export const getHistoryData = async (req, res) => {
     });
   } catch (error) {
     console.log("Error fetching history data:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+export const getInvoiceHistory = async (req, res) => {
+  try {
+    let { tableName, id } = req.query;
+
+    if (!tableName || !id) {
+      return res.status(400).json({
+        success: false,
+        message: "tableName and id are required",
+      });
+    }
+
+    const recordId = Number(id);
+    if (Number.isNaN(recordId)) {
+      return res.status(400).json({
+        success: false,
+        message: "id must be a valid number",
+      });
+    }
+
+    if (!tableName.includes(".")) {
+      tableName = `dbo.${tableName}`;
+    }
+
+    const query = `
+      SELECT
+        @recordId AS recordId,
+        t.EventDate AS date,
+        usr.name AS loginName,
+        usr.emailId AS loginId,
+        shippingLine.name AS shippingLine,
+        shippingLine.emailId AS shippingLineEmailId,
+        shippingLine.telephoneNo AS shippingLineTelephoneNo,
+        ir.rejectRemarks AS rejectionRemarks,
+        ir.remarks AS remarks,
+        newValue.name AS status
+      FROM dbo.fn_AuditLogSummary(@tableName, @recordId) t
+      LEFT JOIN tblMasterData oldValue ON oldValue.id = t.OldValue
+      LEFT JOIN tblMasterData newValue ON newValue.id = t.NewValue
+      INNER JOIN tblInvoiceRequest ir ON ir.id = @recordId
+      LEFT JOIN tblCompany shippingLine ON shippingLine.id = ir.shippingLineId
+      LEFT JOIN tblUser usr ON usr.id = t.UpdatedBy
+      WHERE t.ColumnName = 'invoiceRequestStatusId'
+      ORDER BY t.PrimaryKeyId, t.EventDate, t.ColumnName;
+    `;
+
+    const params = {
+      tableName,
+      recordId,
+    };
+
+    const data = await executeQuery(query, params);
+
+    let rows = [];
+    if (Array.isArray(data) && data[0]?.recordset) {
+      rows = data[0].recordset;
+    } else if (data?.recordset) {
+      rows = data.recordset;
+    } else {
+      rows = data;
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Successfully fetched invoice history",
+      data: rows,
+    });
+  } catch (error) {
+    console.log("Error fetching invoice history:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+export const getInvoiceReleaseHistoryAPI = async (req, res) => {
+  try {
+    let { recordId } = req.query;
+
+    if (!recordId) {
+      return res.status(400).json({
+        success: false,
+        message: "recordId is required",
+      });
+    }
+
+    recordId = Number(recordId);
+
+    const jsonPayload = JSON.stringify({ recordId });
+
+    const query = `
+      EXEC dbo.getInvoiceReleaseHistory @json = @jsonPayload;
+    `;
+
+    const params = { jsonPayload };
+
+    const data = await executeQuery(query, params);
+
+    let rows = [];
+
+    if (Array.isArray(data) && data[0]?.recordset) {
+      rows = data[0].recordset;
+    } else if (data?.recordset) {
+      rows = data.recordset;
+    } else {
+      rows = data;
+    }
+
+    if (!rows.length) {
+      return res.status(200).json({
+        success: true,
+        message: "No data found",
+        data: [],
+      });
+    }
+
+    const jsonKey = Object.keys(rows[0])[0];
+
+    const parsed = JSON.parse(rows[0][jsonKey]);
+
+    return res.status(200).json({
+      success: true,
+      message: "Successfully fetched SP history",
+      data: parsed,
+    });
+  } catch (error) {
+    console.log("Error executing SP:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 };
 
