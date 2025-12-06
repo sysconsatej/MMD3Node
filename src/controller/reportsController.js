@@ -5,7 +5,6 @@ import crypto from "crypto";
 import fs from "fs";
 import fetch from "node-fetch";
 
-
 // ====== ENV helper ======
 const env = (
   key,
@@ -32,16 +31,16 @@ const MIN_CSS = `
 // Boot a warm Chromium once
 async function getBrowser() {
   if (!BROWSER_PROMISE) {
-    BROWSER_PROMISE = puppeteer.launch({
+    BROWSER_PROMISE = await puppeteer.launch({
       headless: "new",
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage", // avoid /dev/shm bottlenecks in Docker
-        "--disable-gpu",
-        "--no-zygote",
-      ],
-      executablePath: "/usr/bin/chromium-browser",
+      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+      ...(process.env.NODE_ENV === "production" ||
+      process.env.PUPPETEER_EXECUTABLE_PATH
+        ? {
+            executablePath:
+              `${process.env.PUPPETEER_EXECUTABLE_PATH}` || "/usr/bin/chromium",
+          }
+        : {}),
     });
   }
   return BROWSER_PROMISE;
@@ -259,8 +258,6 @@ export const emailPdfReports = async (req, res) => {
   } finally {
     try {
       if (page) await page.close(); // keep browser warm
-    } catch { }
+    } catch {}
   }
 };
-
-
