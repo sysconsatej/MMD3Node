@@ -211,6 +211,8 @@ export const emailPdfReports = async (req, res) => {
       preferCSSPageSize: true,
     });
 
+    await browser.close(); // close unused browser if needed
+
     // Email send (pooled)
     const host = env("SMTP_HOST", { fallback: "smtp.gmail.com" });
     const port = Number(env("SMTP_PORT", { fallback: "587" }));
