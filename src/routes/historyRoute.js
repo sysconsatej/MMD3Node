@@ -1,5 +1,5 @@
 import express from "express";
-import { getHistoryData, getInvoiceHistory, getInvoiceReleaseHistoryAPI } from "../controller/historyController.js";
+import { getHblColumnChanges, getHistoryData, getInvoiceHistory, getInvoiceReleaseHistoryAPI } from "../controller/historyController.js";
 
 const router = express.Router();
 
@@ -7,5 +7,6 @@ const router = express.Router();
 router.get("/history", getHistoryData);
 router.get("/history/invoice", getInvoiceHistory);
 router.get("/history/invoiceRelease", getInvoiceReleaseHistoryAPI);
+router.post("/getHblColumnChanges", getHblColumnChanges);
 
 export default router;
