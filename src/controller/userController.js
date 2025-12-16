@@ -25,13 +25,16 @@ export const loginUser = async (req, res) => {
         r.name AS roleName,
         r.roleCode as roleCode,
         b.name as branchName,
-        c.name as companyName
+        c.name as companyName,
+        string_agg(ul.locationId, ',') as locations
       FROM tblUser AS u
       LEFT JOIN tblUserRoleMapping AS urm ON u.id = urm.userId
       LEFT JOIN tblUser AS r ON urm.roleId = r.id
       LEFT JOIN tblCompany AS c ON u.companyId = c.id
       LEFT JOIN tblCompanyBranch AS b ON u.branchId = b.id
+      left join tblUserLocation ul on ul.userId = u.id and ul.status = 1
       WHERE u.emailId = @emailId AND u.password = @password
+      group by u.name, u.id, u.emailId, u.password, u.branchId, u.companyId, urm.roleId, r.name, r.roleCode, b.name, c.name
     `;
 
     const parameters = { emailId, password };
@@ -58,6 +61,7 @@ export const loginUser = async (req, res) => {
         companyName: user.companyName,
         branchId: user.branchId,
         branchName: user.branchName,
+        locations: user.locations,
       },
       key,
       {
@@ -75,6 +79,7 @@ export const loginUser = async (req, res) => {
       companyName: user.companyName,
       branchId: user.branchId,
       branchName: user.branchName,
+      locations: user.locations,
     };
 
     res.cookie("token", token, {
