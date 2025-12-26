@@ -35,11 +35,11 @@ async function getBrowser() {
       headless: "new",
       args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
       ...(process.env.NODE_ENV === "production" ||
-      process.env.PUPPETEER_EXECUTABLE_PATH
+        process.env.PUPPETEER_EXECUTABLE_PATH
         ? {
-            executablePath:
-              `${process.env.PUPPETEER_EXECUTABLE_PATH}` || "/usr/bin/chromium",
-          }
+          executablePath:
+            `${process.env.PUPPETEER_EXECUTABLE_PATH}` || "/usr/bin/chromium",
+        }
         : {}),
     });
   }
@@ -210,9 +210,6 @@ export const emailPdfReports = async (req, res) => {
       margin: { top: "10px", bottom: "10px", left: "10px", right: "10px" },
       preferCSSPageSize: true,
     });
-
-    await browser.close(); // close unused browser if needed
-
     // Email send (pooled)
     const host = env("SMTP_HOST", { fallback: "smtp.gmail.com" });
     const port = Number(env("SMTP_PORT", { fallback: "587" }));
@@ -260,6 +257,6 @@ export const emailPdfReports = async (req, res) => {
   } finally {
     try {
       if (page) await page.close(); // keep browser warm
-    } catch {}
+    } catch { }
   }
 };
