@@ -66,74 +66,133 @@ export const getHistoryData = async (req, res) => {
   }
 };
 
+// export const getInvoiceHistory = async (req, res) => {
+//   try {
+//     let { tableName, id } = req.query;
+
+//     if (!tableName || !id) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "tableName and id are required",
+//       });
+//     }
+
+//     const recordId = Number(id);
+//     if (Number.isNaN(recordId)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "id must be a valid number",
+//       });
+//     }
+
+//     if (!tableName.includes(".")) {
+//       tableName = `dbo.${tableName}`;
+//     }
+
+//     const query = `
+//       SELECT
+//         @recordId AS recordId,
+//         t.EventDate AS date,
+//         usr.name AS loginName,
+//         usr.emailId AS loginId,
+//         shippingLine.name AS shippingLine,
+//         shippingLine.emailId AS shippingLineEmailId,
+//         shippingLine.telephoneNo AS shippingLineTelephoneNo,
+//         ir.rejectRemarks AS rejectionRemarks,
+//         ir.remarks AS remarks,
+//         newValue.name AS status
+//       FROM dbo.fn_AuditLogSummary(@tableName, @recordId) t
+//       LEFT JOIN tblMasterData oldValue ON oldValue.id = t.OldValue
+//       LEFT JOIN tblMasterData newValue ON newValue.id = t.NewValue
+//       INNER JOIN tblInvoiceRequest ir ON ir.id = @recordId
+//       LEFT JOIN tblCompany shippingLine ON shippingLine.id = ir.shippingLineId
+//       LEFT JOIN tblUser usr ON usr.id = t.UpdatedBy
+//       WHERE t.ColumnName = 'invoiceRequestStatusId'
+//       ORDER BY t.PrimaryKeyId, t.EventDate, t.ColumnName;
+//     `;
+
+//     const params = {
+//       tableName,
+//       recordId,
+//     };
+
+//     const data = await executeQuery(query, params);
+
+//     let rows = [];
+//     if (Array.isArray(data) && data[0]?.recordset) {
+//       rows = data[0].recordset;
+//     } else if (data?.recordset) {
+//       rows = data.recordset;
+//     } else {
+//       rows = data;
+//     }
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Successfully fetched invoice history",
+//       data: rows,
+//     });
+//   } catch (error) {
+//     console.log("Error fetching invoice history:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal server error",
+//     });
+//   }
+// };
 export const getInvoiceHistory = async (req, res) => {
   try {
-    let { tableName, id } = req.query;
+    let { recordId } = req.query;
 
-    if (!tableName || !id) {
+    if (!recordId) {
       return res.status(400).json({
         success: false,
-        message: "tableName and id are required",
+        message: "recordId is required",
       });
     }
 
-    const recordId = Number(id);
+    recordId = Number(recordId);
     if (Number.isNaN(recordId)) {
       return res.status(400).json({
         success: false,
-        message: "id must be a valid number",
+        message: "recordId must be a valid number",
       });
     }
 
-    if (!tableName.includes(".")) {
-      tableName = `dbo.${tableName}`;
-    }
+    const jsonPayload = JSON.stringify({ recordId });
 
     const query = `
-      SELECT
-        @recordId AS recordId,
-        t.EventDate AS date,
-        usr.name AS loginName,
-        usr.emailId AS loginId,
-        shippingLine.name AS shippingLine,
-        shippingLine.emailId AS shippingLineEmailId,
-        shippingLine.telephoneNo AS shippingLineTelephoneNo,
-        ir.rejectRemarks AS rejectionRemarks,
-        ir.remarks AS remarks,
-        newValue.name AS status
-      FROM dbo.fn_AuditLogSummary(@tableName, @recordId) t
-      LEFT JOIN tblMasterData oldValue ON oldValue.id = t.OldValue
-      LEFT JOIN tblMasterData newValue ON newValue.id = t.NewValue
-      INNER JOIN tblInvoiceRequest ir ON ir.id = @recordId
-      LEFT JOIN tblCompany shippingLine ON shippingLine.id = ir.shippingLineId
-      LEFT JOIN tblUser usr ON usr.id = t.UpdatedBy
-      WHERE t.ColumnName = 'invoiceRequestStatusId'
-      ORDER BY t.PrimaryKeyId, t.EventDate, t.ColumnName;
+      EXEC dbo.getInvoiceRequestHistory @json = @jsonPayload;
     `;
 
-    const params = {
-      tableName,
-      recordId,
-    };
+    const data = await executeQuery(query, { jsonPayload });
 
-    const data = await executeQuery(query, params);
+    const rows = data?.[0]?.recordset || data?.recordset || data || [];
 
-    let rows = [];
-    if (Array.isArray(data) && data[0]?.recordset) {
-      rows = data[0].recordset;
-    } else if (data?.recordset) {
-      rows = data.recordset;
-    } else {
-      rows = data;
+    if (!rows.length) {
+      return res.status(200).json({
+        success: true,
+        message: "No data found",
+        data: [],
+      });
+    }
+
+    const jsonKey = Object.keys(rows[0])[0];
+
+    let parsed = [];
+    try {
+      parsed = JSON.parse(rows[0][jsonKey]);
+    } catch (e) {
+      parsed = [];
     }
 
     return res.status(200).json({
       success: true,
       message: "Successfully fetched invoice history",
-      data: rows,
+      data: parsed,
     });
   } catch (error) {
-    console.log("Error fetching invoice history:", error);
+    console.log("Error executing SP:", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
