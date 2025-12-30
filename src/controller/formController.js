@@ -1,6 +1,4 @@
-import {
-  executeQuery,
-} from "../config/DBConfig.js";
+import { executeQuery } from "../config/DBConfig.js";
 import xlsx from "xlsx";
 
 export const insertUpdate = async (req, res) => {
@@ -66,7 +64,7 @@ export const insertUpdate = async (req, res) => {
       message: "Error executing dynamicMultiSubmit",
       error: err.message,
     });
-  } 
+  }
 };
 
 export const fetchForm = async (req, res) => {
@@ -112,12 +110,12 @@ export const fetchForm = async (req, res) => {
       message: "Error executing fetchFormDataApi",
       error: err.message,
     });
-  } 
+  }
 };
 
 export const deleteRecord = async (req, res) => {
   try {
-    const { recordId, tableName , updatedBy  , updatedDate } = req.body;
+    const { recordId, tableName, updatedBy, updatedDate } = req.body;
 
     if (!tableName || !recordId) {
       return res.status(400).json({
@@ -131,8 +129,12 @@ export const deleteRecord = async (req, res) => {
     const payload = {
       tableName,
       recordId,
-      updatedBy  : req?.body?.updatedBy ? req?.body?.updatedBy :  req?.user?.updatedBy,
-      updatedDate  : req?.body?.updatedDate ? req?.body?.updatedDate :  req?.user?.updatedDate,
+      updatedBy: req?.body?.updatedBy
+        ? req?.body?.updatedBy
+        : req?.user?.updatedBy,
+      updatedDate: req?.body?.updatedDate
+        ? req?.body?.updatedDate
+        : req?.user?.updatedDate,
     };
 
     const query = `EXEC deleteRecordApi @recordId = @recordId, @tableName = @tableName , @updatedBy=@updatedBy , @updatedDate=@updatedDate`;
@@ -152,7 +154,7 @@ export const deleteRecord = async (req, res) => {
       message: "Error executing deleteRecordApi",
       error: err.message,
     });
-  } 
+  }
 };
 
 export const uploadExcel = async (req, res) => {
@@ -321,5 +323,90 @@ export const uploadExcel = async (req, res) => {
       message: "Error executing uploadExcel API",
       error: err.message,
     });
-  } 
+  }
+};
+
+const toStr = (v) => {
+  if (v == null) return "";
+  if (Array.isArray(v))
+    return v
+      .map((x) => String(x ?? "").trim())
+      .filter(Boolean)
+      .join(",");
+  if (typeof v === "object") return JSON.stringify(v); // safe fallback
+  return String(v);
+};
+
+export const validatePrint = async (req, res) => {
+  try {
+    const {
+      tableName = null,
+      recordId,
+      reportsName,
+      loginCompanyId,
+      loginBranchId,
+      locationId,
+    } = req.body || {};
+
+    // minimal required validation
+    if (
+      recordId == null ||
+      loginCompanyId == null ||
+      loginBranchId == null ||
+      locationId == null
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Missing required fields: recordId, reportsName, loginCompanyId, loginBranchId, locationId",
+      });
+    }
+
+    // ✅ ensure reportsName is a valid string for mssql NVARCHAR
+    const reportsNameStr = toStr(reportsName).trim();
+    if (!reportsNameStr) {
+      return res.status(400).json({
+        success: false,
+        message: "reportsName must be a non-empty string",
+      });
+    }
+
+    const parameters = {
+      tableName,
+      recordId,
+      reportsName: reportsName,
+      loginCompanyId,
+      loginBranchId,
+      locationId,
+    };
+
+    const query = `
+      EXEC validatePrint
+        @tableName = @tableName,
+        @recordId = @recordId,
+        @reportsName = @reportsName,
+        @loginCompanyId = @loginCompanyId,
+        @loginBranchId = @loginBranchId,
+        @locationId = @locationId
+    `;
+
+    const rows = await executeQuery(query, parameters);
+
+    // ✅ extract JSON from first cell
+    const firstRow = rows?.[0] ?? null;
+    const firstCell = firstRow ? Object.values(firstRow)[0] : null;
+
+    if (!firstCell) return res.status(200).json(null);
+
+    try {
+      return res.status(200).json(JSON.parse(firstCell));
+    } catch {
+      return res.status(200).json(firstCell);
+    }
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
 };
