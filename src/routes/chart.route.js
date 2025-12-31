@@ -3,6 +3,6 @@ import { getChartData } from "../controller/chartController.js";
 import { authenticateJWT } from "../middleware/authenticateJWT.js";
 
 const router = Router();
-router.get("/", authenticateJWT, getChartData);
+router.get("/:spName", authenticateJWT, getChartData);
 
 export default router;
