@@ -25,6 +25,7 @@ import insertExternalDataApi from "./src/routes/inserteExternalDataRoute.js";
 import chartRoute from "./src/routes/chart.route.js";
 import historyRoutes from "./src/routes/historyRoute.js";
 import blWorkFlow from "./src/routes/bl-workflow.route.js";
+import validatePrint from "./src/routes/formRoute.js";
 
 initializeConnection()
   .then(() => {
@@ -63,6 +64,7 @@ app.use("/api/v1", dynamicTableRoute);
 app.use("/api/v1/form", formRoute);
 app.use("/api/v1", updateStatusRoute);
 app.use("/api/v1", dynamicReport);
+app.use("/api/v1", validatePrint);
 
 app.use("/api/v1/reports", emailPdfReports);
 app.use("/api/v1/user", userRoute);
