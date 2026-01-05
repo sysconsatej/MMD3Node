@@ -258,6 +258,86 @@ export const getInvoiceReleaseHistoryAPI = async (req, res) => {
     });
   }
 };
+export const getHistoryAPI = async (req, res) => {
+  try {
+    let { recordId, spName } = req.query;
+
+    if (!spName) {
+      return res.status(400).json({
+        success: false,
+        message: "spName is required",
+      });
+    }
+
+    if (!recordId) {
+      return res.status(400).json({
+        success: false,
+        message: "recordId is required",
+      });
+    }
+
+    recordId = Number(recordId);
+
+    if (Number.isNaN(recordId)) {
+      return res.status(400).json({
+        success: false,
+        message: "recordId must be number",
+      });
+    }
+
+    // 🔒 thoda safety – random SQL inject na ho
+    if (!/^[a-zA-Z0-9_.]+$/.test(spName)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid spName",
+      });
+    }
+
+    const jsonPayload = JSON.stringify({ recordId });
+
+    const query = `
+      EXEC ${spName} @json = @jsonPayload;
+    `;
+
+    const params = { jsonPayload };
+
+    const data = await executeQuery(query, params);
+
+    let rows = [];
+
+    if (Array.isArray(data) && data[0]?.recordset) {
+      rows = data[0].recordset;
+    } else if (data?.recordset) {
+      rows = data.recordset;
+    } else {
+      rows = data || [];
+    }
+
+    if (!rows.length) {
+      return res.status(200).json({
+        success: true,
+        message: "No data found",
+        data: [],
+      });
+    }
+
+    // SP se FOR JSON PATH aata hai
+    const jsonKey = Object.keys(rows[0])[0];
+    const parsed = JSON.parse(rows[0][jsonKey]);
+
+    return res.status(200).json({
+      success: true,
+      message: "Successfully fetched SP history",
+      data: parsed,
+    });
+  } catch (error) {
+    console.error("Error executing SP:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
 
 export const getHblColumnChanges = async (req, res) => {
   const { ids } = req.body;
