@@ -262,30 +262,21 @@ export const getHistoryAPI = async (req, res) => {
   try {
     let { recordId, spName } = req.query;
 
-    if (!spName) {
+    if (!spName || !recordId) {
       return res.status(400).json({
         success: false,
-        message: "spName is required",
+        message: "spName and recordId are required",
       });
     }
 
-    if (!recordId) {
+    // allow single + multiple ids
+    if (!/^\d+(,\d+)*$/.test(recordId)) {
       return res.status(400).json({
         success: false,
-        message: "recordId is required",
+        message: "recordId must be number or comma separated numbers",
       });
     }
 
-    recordId = Number(recordId);
-
-    if (Number.isNaN(recordId)) {
-      return res.status(400).json({
-        success: false,
-        message: "recordId must be number",
-      });
-    }
-
-    // 🔒 thoda safety – random SQL inject na ho
     if (!/^[a-zA-Z0-9_.]+$/.test(spName)) {
       return res.status(400).json({
         success: false,
@@ -295,43 +286,61 @@ export const getHistoryAPI = async (req, res) => {
 
     const jsonPayload = JSON.stringify({ recordId });
 
-    const query = `
-      EXEC ${spName} @json = @jsonPayload;
-    `;
-
+    const query = `EXEC ${spName} @json = @jsonPayload;`;
     const params = { jsonPayload };
 
-    const data = await executeQuery(query, params);
+    const result = await executeQuery(query, params);
 
-    let rows = [];
+    // Result structure: [{ "JSON_F52E2B61-18A1-...": "[{...}]" }]
+    // No .recordset property exists
+    const firstRow = result?.[0];
 
-    if (Array.isArray(data) && data[0]?.recordset) {
-      rows = data[0].recordset;
-    } else if (data?.recordset) {
-      rows = data.recordset;
-    } else {
-      rows = data || [];
-    }
-
-    if (!rows.length) {
-      return res.status(200).json({
+    if (!firstRow) {
+      return res.json({
         success: true,
         message: "No data found",
         data: [],
       });
     }
 
-    // SP se FOR JSON PATH aata hai
-    const jsonKey = Object.keys(rows[0])[0];
-    const parsed = JSON.parse(rows[0][jsonKey]);
+    // Extract the JSON string from the dynamic column name
+    const columnKey = Object.keys(firstRow)[0];
+    const jsonString = firstRow[columnKey];
 
-    return res.status(200).json({
+    if (!jsonString) {
+      return res.json({
+        success: true,
+        message: "No data found",
+        data: [],
+      });
+    }
+
+    let finalData;
+
+    if (typeof jsonString === "string") {
+      // Parse the JSON string returned by SQL FOR JSON PATH
+      try {
+        finalData = JSON.parse(jsonString);
+      } catch (parseErr) {
+        console.error("JSON parse error:", parseErr);
+        return res.status(500).json({
+          success: false,
+          message: "Error parsing response data",
+        });
+      }
+    } else if (Array.isArray(jsonString)) {
+      finalData = jsonString;
+    } else {
+      finalData = [firstRow];
+    }
+
+    return res.json({
       success: true,
       message: "Successfully fetched SP history",
-      data: parsed,
+      data: finalData,
     });
-  } catch (error) {
-    console.error("Error executing SP:", error);
+  } catch (err) {
+    console.error("History API error:", err);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
