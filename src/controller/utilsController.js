@@ -43,8 +43,8 @@ export const getDropDownValues = async (req, res) => {
     typeof filtersJson === "string"
       ? filtersJson
       : filtersJson
-      ? JSON.stringify(filtersJson)
-      : null;
+        ? JSON.stringify(filtersJson)
+        : null;
 
   const query = `
     EXEC getDropdownApi
@@ -76,7 +76,6 @@ export const getDropDownValues = async (req, res) => {
   };
 
   try {
-
     const result = await executeQuery(query, parameters);
 
     const jsonStr =
@@ -119,7 +118,6 @@ export const getTableValues = async (req, res) => {
   }
 
   try {
-
     const query = `EXEC getDataApi @columns = @columns, @tableName = @tableName, @whereCondition = @whereCondition, @orderBy = @orderBy, @joins = @joins`;
 
     const parameters = { columns, tableName, whereCondition, orderBy, joins };
@@ -149,6 +147,7 @@ export const nextPrevData = async (req, res) => {
     columnNames,
     tableName,
     groupBy = "",
+    locationId = 0,
   } = req.body;
 
   if (!formId || !columnNames || !tableName) {
@@ -159,10 +158,16 @@ export const nextPrevData = async (req, res) => {
   }
 
   try {
+    const query = `EXEC nextPrevDataApi @formId = @formId, @columnNames = @columnNames, @tableName = @tableName, @orderBy = @orderBy, @groupBy = @groupBy, @locationId = @locationId`;
 
-    const query = `EXEC nextPrevDataApi @formId = @formId, @columnNames = @columnNames, @tableName = @tableName, @orderBy = @orderBy, @groupBy = @groupBy`;
-
-    const parameters = { formId, columnNames, tableName, orderBy, groupBy };
+    const parameters = {
+      formId,
+      columnNames,
+      tableName,
+      orderBy,
+      groupBy,
+      locationId,
+    };
 
     const result = await executeQuery(query, parameters);
 
@@ -177,5 +182,5 @@ export const nextPrevData = async (req, res) => {
       message: "Error executing nextPrevDataApi API",
       error: err.message,
     });
-  } 
+  }
 };
