@@ -147,8 +147,8 @@ export const nextPrevData = async (req, res) => {
     columnNames,
     tableName,
     groupBy = "",
-    locationId = 0,
-    shippingLineId = 0,
+    where = "",
+    joins = "",
   } = req.body;
 
   if (!formId || !columnNames || !tableName) {
@@ -159,7 +159,7 @@ export const nextPrevData = async (req, res) => {
   }
 
   try {
-    const query = `EXEC nextPrevDataApi @formId = @formId, @columnNames = @columnNames, @tableName = @tableName, @orderBy = @orderBy, @groupBy = @groupBy, @locationId = @locationId, @shippingLineId = @shippingLineId`;
+    const query = `EXEC nextPrevDataApi @formId = @formId, @columnNames = @columnNames, @tableName = @tableName, @orderBy = @orderBy, @groupBy = @groupBy, @where = @where, @joins = @joins`;
 
     const parameters = {
       formId,
@@ -167,8 +167,8 @@ export const nextPrevData = async (req, res) => {
       tableName,
       orderBy,
       groupBy,
-      locationId,
-      shippingLineId,
+      where,
+      joins,
     };
 
     const result = await executeQuery(query, parameters);
