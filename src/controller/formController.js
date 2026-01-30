@@ -115,7 +115,9 @@ export const fetchForm = async (req, res) => {
 
 export const deleteRecord = async (req, res) => {
   try {
-    const { recordId, tableName, updatedBy, updatedDate } = req.body;
+    const { recordId, tableName, updatedBy, updatedDate, deletedNo = null } = req.body;
+
+    console.log('deletedNo', deletedNo);
 
     if (!tableName || !recordId) {
       return res.status(400).json({
@@ -129,15 +131,12 @@ export const deleteRecord = async (req, res) => {
     const payload = {
       tableName,
       recordId,
-      updatedBy: req?.body?.updatedBy
-        ? req?.body?.updatedBy
-        : req?.user?.updatedBy,
-      updatedDate: req?.body?.updatedDate
-        ? req?.body?.updatedDate
-        : req?.user?.updatedDate,
+      updatedBy: updatedBy,
+      updatedDate: updatedDate,
+      deletedNo: deletedNo,
     };
 
-    const query = `EXEC deleteRecordApi @recordId = @recordId, @tableName = @tableName , @updatedBy=@updatedBy , @updatedDate=@updatedDate`;
+    const query = `EXEC deleteRecordApi @recordId = @recordId, @tableName = @tableName , @updatedBy=@updatedBy , @updatedDate = @updatedDate, @deletedNo = @deletedNo`;
     const result = await executeQuery(query, payload);
 
     const jsonStr = Object.values(result[0])[0];
