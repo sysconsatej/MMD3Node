@@ -42,7 +42,7 @@ export async function executeQuery(queryString, parameters = {}) {
     }
 
     const result = await request.query(queryString);
-    return result.recordset;
+    return result?.recordset  ||  [];
   } catch (error) {
     throw error;
   }

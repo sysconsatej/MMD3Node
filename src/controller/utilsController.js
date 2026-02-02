@@ -123,12 +123,13 @@ export const getTableValues = async (req, res) => {
     const parameters = { columns, tableName, whereCondition, orderBy, joins };
 
     const result = await executeQuery(query, parameters);
-    const jsonStr = Object.values(result[0])[0];
-    const parsed = JSON.parse(jsonStr);
+    const jsonStr = result[0] === undefined ? [] : Object.values(result[0])[0];
+    const parsed = jsonStr ? JSON.parse(jsonStr) : [];
 
     res.status(200).json({
       success: true,
-      message: "Successfully fetched data",
+      message:
+        parsed.length === 0 ? "No Data Available" : "Successfully fetched data",
       data: parsed,
     });
   } catch (err) {
