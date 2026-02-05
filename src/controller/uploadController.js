@@ -98,14 +98,20 @@ export const uploadToSp = async (req, res) => {
       return res.send(data);
     }
 
+    const arr = Array.isArray(data) ? data : [];
+    const r0 = arr[0];
+
+    const hasSpStatus =
+      r0 && typeof r0 === "object" && "success" in r0 && "message" in r0;
+
     return res.send({
-      success: true,
-      message:
-        Array.isArray(data) && data.length
-          ? "Data Inserted successfully"
-          : "No data returned",
-      data: Array.isArray(data) ? data : [],
+      success: hasSpStatus ? Number(r0.success) === 1 : true,
+      message: hasSpStatus
+        ? String(r0.message)
+        : (arr.length ? "Data Inserted successfully" : "No data returned"),
+      data: arr,
     });
+
   } catch (err) {
     console.error("uploadToSp error:", err);
     return res.status(500).send({
@@ -148,5 +154,5 @@ export const invoiceUploadPDF = async (req, res) => {
       message: err?.message || "Internal Server Error",
       data: [],
     });
-  } 
+  }
 };
