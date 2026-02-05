@@ -1,7 +1,5 @@
 import jwt from "jsonwebtoken";
-import {
-  executeQuery,
-} from "../config/DBConfig.js";
+import { executeQuery } from "../config/DBConfig.js";
 
 export const loginUser = async (req, res) => {
   try {
@@ -13,35 +11,62 @@ export const loginUser = async (req, res) => {
         .send({ message: "Email and password are required" });
     }
 
-    const query = `
-      SELECT
-        u.name as userName,
-        u.id AS userId,
-        u.emailId,
-        u.password,
-        u.branchId,
-        u.companyId,
-        urm.roleId,
-        r.name AS roleName,
-        r.roleCode as roleCode,
-        b.name as branchName,
-        c.name as companyName,
-        string_agg(ul.locationId, ',') as locations
-      FROM tblUser AS u
-      LEFT JOIN tblUserRoleMapping AS urm ON u.id = urm.userId
-      LEFT JOIN tblUser AS r ON urm.roleId = r.id
-      LEFT JOIN tblCompany AS c ON u.companyId = c.id
-      LEFT JOIN tblCompanyBranch AS b ON u.branchId = b.id
-      left join tblUserLocation ul on ul.userId = u.id and ul.status = 1
-      WHERE u.emailId = @emailId AND u.password = @password
-      group by u.name, u.id, u.emailId, u.password, u.branchId, u.companyId, urm.roleId, r.name, r.roleCode, b.name, c.name
-    `;
+    const query = `WITH LocationAgg AS (
+    SELECT
+        userId,
+        STRING_AGG(CAST(locationId AS varchar(20)), ',') AS locations
+    FROM (
+        SELECT DISTINCT userId, locationId
+        FROM tblUserLocation
+        WHERE status = 1
+    ) x
+    GROUP BY userId
+),
+RoleAgg AS (
+    SELECT
+        userId,
+        roleCode AS roleCode,
+        STRING_AGG(CAST(roleId AS varchar(20)), ',') AS roleId,
+        STRING_AGG(roleName, ',') AS roleName
+    FROM (
+        SELECT DISTINCT
+            urm.userId,
+            urm.roleId,
+            i.roleCode,
+            r.name AS roleName
+        FROM tblUserRoleMapping urm
+        JOIN tblUser r ON urm.roleId = r.id
+        JOIN tblUser i ON r.roleCodeId = i.id
+    ) x
+    GROUP BY userId , roleCode
+)
+SELECT
+    u.name AS userName,
+    u.id AS userId,
+    u.emailId,
+    u.password,
+    u.branchId,
+    u.companyId,
+    ra.roleId,
+    ra.roleCode,
+    ra.roleName,
+    b.name AS branchName,
+    c.name AS companyName,
+    la.locations
+FROM tblUser u
+LEFT JOIN RoleAgg ra ON ra.userId = u.id
+LEFT JOIN LocationAgg la ON la.userId = u.id
+LEFT JOIN tblCompany c ON u.companyId = c.id
+LEFT JOIN tblCompanyBranch b ON u.branchId = b.id
+WHERE u.emailId = @emailId
+  AND u.password = @password;
+`;
 
     const parameters = { emailId, password };
 
-
     const result = await executeQuery(query, parameters);
     const user = result?.[0];
+    console.log(user , '[][]')
 
     if (!user) {
       return res.status(400).send({ message: "Invalid credentials" });
@@ -66,7 +91,7 @@ export const loginUser = async (req, res) => {
       key,
       {
         expiresIn: "1d",
-      }
+      },
     );
     const userData = {
       userId: user.userId,
