@@ -124,7 +124,7 @@ export const getTableValues = async (req, res) => {
 
     const result = await executeQuery(query, parameters);
     const jsonStr = Object.values(result[0])[0];
-    const parsed = jsonStr ? JSON.parse(jsonStr);
+    const parsed = JSON.parse(jsonStr);
 
     res.status(200).json({
       success: true,
