@@ -1,8 +1,5 @@
 // controllers/uploadToSp.js
-import {
-  executeQuerySpData,
-  executeQuery,
-} from "../config/DBConfig.js";
+import { executeQuerySpData, executeQuery } from "../config/DBConfig.js";
 
 // Allow proc / dbo.proc / db.dbo.proc (letters, digits, underscores)
 const VALID_SP =
@@ -81,7 +78,6 @@ export const uploadToSp = async (req, res) => {
       });
     }
 
-
     const sql = `EXEC ${qualify(spName.trim())} @json=@json`;
     const params = { json: JSON.stringify(json) }; // ← pass the whole object
 
@@ -101,17 +97,19 @@ export const uploadToSp = async (req, res) => {
     const arr = Array.isArray(data) ? data : [];
     const r0 = arr[0];
 
-    const hasSpStatus =
-      r0 && typeof r0 === "object" && "success" in r0 && "message" in r0;
-
-    return res.send({
-      success: hasSpStatus ? Number(r0.success) === 1 : true,
-      message: hasSpStatus
-        ? String(r0.message)
-        : (arr.length ? "Data Inserted successfully" : "No data returned"),
-      data: arr,
-    });
-
+    if (r0.success) {
+      return res.send({
+        success: true,
+        message: "Data Inserted successfully",
+        data: arr,
+      });
+    } else {
+      return res.send({
+        success: false,
+        message: "Errors found during upload. Please check the error list.",
+        data: arr,
+      });
+    }
   } catch (err) {
     console.error("uploadToSp error:", err);
     return res.status(500).send({
