@@ -37,6 +37,7 @@ RoleAgg AS (
         FROM tblUserRoleMapping urm
         JOIN tblUser r ON urm.roleId = r.id
         JOIN tblUser i ON r.roleCodeId = i.id
+        where urm.status = 1
     ) x
     GROUP BY userId , roleCode
 )
