@@ -84,9 +84,9 @@ app.listen(port, () => {
 
 process.on("SIGTERM", async () => {
   console.log("SIGTERM signal received: closing HTTP server");
-  server.close(() => {
-    console.log("HTTP server closed");
-  });
+  // server.close(() => {
+  //   console.log("HTTP server closed");
+  // });
 
   await closeConnection();
   console.log("Database connection closed");
@@ -97,9 +97,9 @@ process.on("SIGTERM", async () => {
 // If using SIGINT (Ctrl+C) in terminal
 process.on("SIGINT", async () => {
   console.log("SIGINT signal received: closing HTTP server");
-  server.close(() => {
-    console.log("HTTP server closed");
-  });
+  // server.close(() => {
+  //   console.log("HTTP server closed");
+  // });
 
   await closeConnection();
   console.log("Database connection closed");
