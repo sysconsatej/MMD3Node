@@ -3,12 +3,12 @@ import { executeQuery } from "../config/DBConfig.js";
 
 export const loginUser = async (req, res) => {
   try {
-    const { emailId, password } = req.query;
+    const { name, password } = req.query;
 
-    if (!emailId || !password) {
+    if (!name || !password) {
       return res
         .status(400)
-        .send({ message: "Email and password are required" });
+        .send({ message: "name and password are required" });
     }
 
     const query = `WITH LocationAgg AS (
@@ -59,11 +59,11 @@ LEFT JOIN RoleAgg ra ON ra.userId = u.id
 LEFT JOIN LocationAgg la ON la.userId = u.id
 LEFT JOIN tblCompany c ON u.companyId = c.id
 LEFT JOIN tblCompanyBranch b ON u.branchId = b.id
-WHERE u.emailId = @emailId
+WHERE u.name = @name
   AND u.password = @password;
 `;
 
-    const parameters = { emailId, password };
+    const parameters = { name, password };
 
     const result = await executeQuery(query, parameters);
     const user = result?.[0];
