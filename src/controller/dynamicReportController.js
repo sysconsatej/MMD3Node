@@ -1,8 +1,6 @@
-import {
-
-  executeQuerySpData,
-} from "../config/DBConfig.js";
+import { executeQuerySpData } from "../config/DBConfig.js";
 import puppeteer from "puppeteer";
+import os from "os";
 
 const looksLikeJson = (s) =>
   typeof s === "string" && !!s.trim() && /^[\[{]/.test(s.trim());
@@ -11,15 +9,15 @@ const getFirstRecordset = (raw) =>
   Array.isArray(raw)
     ? raw
     : raw?.recordset ||
-    (Array.isArray(raw?.recordsets) ? raw.recordsets[0] : []) ||
-    [];
+      (Array.isArray(raw?.recordsets) ? raw.recordsets[0] : []) ||
+      [];
 
 const extractJsonString = (row) => {
   if (!row) return null;
   const JSON_COL = "JSON_F52E2B61-18A1-11d1-B105-00805F49916B";
   if (typeof row[JSON_COL] === "string") return row[JSON_COL];
   const key = Object.keys(row).find(
-    (k) => typeof row[k] === "string" && looksLikeJson(row[k])
+    (k) => typeof row[k] === "string" && looksLikeJson(row[k]),
   );
   return key ? row[key] : null;
 };
@@ -31,7 +29,7 @@ const parseForJsonRecordset = (raw) => {
   if (looksLikeJson(jsonStr)) {
     try {
       return JSON.parse(jsonStr);
-    } catch { }
+    } catch {}
   }
   return rs;
 };
@@ -116,7 +114,7 @@ export const dynamicReportUpdate = async (req, res) => {
       message: "Failed to execute stored procedure.",
       error: err?.message,
     });
-  } 
+  }
 };
 
 const execOnceJson = async (spName, uiPayload) => {
@@ -147,7 +145,7 @@ const execOnceJson = async (spName, uiPayload) => {
 
   if (typeof jsonStr !== "string") {
     const e = new Error(
-      "Stored procedure did not return a JSON string in the first row."
+      "Stored procedure did not return a JSON string in the first row.",
     );
     e.raw = JSON.stringify(row0 ?? {});
     throw e;
@@ -218,7 +216,7 @@ export const getSpData = async (req, res) => {
       error: err.message,
       ...(err.raw ? { raw: err.raw } : {}),
     });
-  } 
+  }
 };
 
 export const getIgmBlData = async (req, res) => {
@@ -255,7 +253,7 @@ export const getIgmBlData = async (req, res) => {
       message: "Failed to execute igmBldata.",
       error: err?.message,
     });
-  } 
+  }
 };
 
 export const localPDFReports = async (req, res) => {
@@ -265,7 +263,7 @@ export const localPDFReports = async (req, res) => {
       orientation = "portrait",
       pdfFilename = "report",
       extraStyles = "",
-      cssUrls = []
+      cssUrls = [],
     } = req.body || {};
 
     // quick sanity checks + debug
@@ -282,10 +280,12 @@ export const localPDFReports = async (req, res) => {
     try {
       const r = await fetch(
         "https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css",
-        { cache: "no-store" }
+        { cache: "no-store" },
       );
       tailwindCSS = await r.text();
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
 
     const fullStyledHtml = `
       <!DOCTYPE html>
@@ -304,11 +304,27 @@ export const localPDFReports = async (req, res) => {
       </html>
     `;
 
+    const platform = os.platform();
+
     const browser = await puppeteer.launch({
       headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
-      ...(process.env.NODE_ENV === "production" || process.env.PUPPETEER_EXECUTABLE_PATH
-        ? { executablePath: `${process.env.PUPPETEER_EXECUTABLE_PATH}` || "/usr/bin/chromium" }
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+      ],
+
+      ...(process.env.NODE_ENV === "production" ||
+      process.env.PUPPETEER_EXECUTABLE_PATH
+        ? {
+            executablePath:
+              process.env.PUPPETEER_EXECUTABLE_PATH ||
+              (platform === "win32"
+                ? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+                : platform === "linux"
+                  ? "/usr/bin/chromium-browser"
+                  : undefined),
+          }
         : {}),
     });
 
@@ -316,19 +332,24 @@ export const localPDFReports = async (req, res) => {
 
     // avoid networkidle0 stalls
     //await page.setContent(fullStyledHtml, { waitUntil: "domcontentloaded", timeout: 60000 }); // increased time limit
-    await page.setContent(fullStyledHtml, { waitUntil: "domcontentloaded", timeout: 0 });
+    await page.setContent(fullStyledHtml, {
+      waitUntil: "domcontentloaded",
+      timeout: 0,
+    });
 
     // wait for images, but cap wait so it never hangs
     await page.evaluate(async () => {
       const imgs = Array.from(document.images);
       const waitAll = Promise.all(
-        imgs.map(img =>
+        imgs.map((img) =>
           img.complete
             ? Promise.resolve()
-            : new Promise(r => { img.onload = img.onerror = r; })
-        )
+            : new Promise((r) => {
+                img.onload = img.onerror = r;
+              }),
+        ),
       );
-      const cap = new Promise(r => setTimeout(r, 4000));
+      const cap = new Promise((r) => setTimeout(r, 4000));
       await Promise.race([waitAll, cap]);
     });
 
@@ -341,9 +362,15 @@ export const localPDFReports = async (req, res) => {
 
     await browser.close();
 
-    const safeName = String(pdfFilename || "report").replace(/[\\/:*?"<>|]+/g, "_");
+    const safeName = String(pdfFilename || "report").replace(
+      /[\\/:*?"<>|]+/g,
+      "_",
+    );
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename="${safeName}.pdf"`);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${safeName}.pdf"`,
+    );
     res.end(pdfBuffer, "binary");
   } catch (error) {
     console.error("Error generating PDF:", error);
@@ -375,8 +402,7 @@ export const getBlDataForDO = async (req, res) => {
     if (id === null || clientId === null) {
       return res.status(400).json({
         success: false,
-        message:
-          "Both 'id' and 'clientId' must be numbers (e.g., 5770 and 8).",
+        message: "Both 'id' and 'clientId' must be numbers (e.g., 5770 and 8).",
         received: { id: rawId, clientId: rawClientId },
       });
     }
@@ -398,7 +424,7 @@ export const getBlDataForDO = async (req, res) => {
       message: "Failed to execute blDataForDO.",
       error: err?.message,
     });
-  } 
+  }
 };
 
 export const execSpJsonUniversal = async (req, res) => {
@@ -406,7 +432,11 @@ export const execSpJsonUniversal = async (req, res) => {
   const raw = req.body?.jsonData;
   const pref = (req.body?.paramName || "jsonData").toLowerCase();
 
-  if (!spName || typeof spName !== "string" || !/^[A-Za-z0-9_.]+$/.test(spName)) {
+  if (
+    !spName ||
+    typeof spName !== "string" ||
+    !/^[A-Za-z0-9_.]+$/.test(spName)
+  ) {
     return res.status(400).json({
       success: false,
       message:
@@ -421,20 +451,22 @@ export const execSpJsonUniversal = async (req, res) => {
       ? [raw]
       : [{}]; // always send something
 
-  const paramOrder = [...new Set([pref, "jsonData", "json", "filterCondition"])];
+  const paramOrder = [
+    ...new Set([pref, "jsonData", "json", "filterCondition"]),
+  ];
 
-  const looksLikeJson = (s) => typeof s === "string" && !!s.trim() && /^[\[{]/.test(s.trim());
+  const looksLikeJson = (s) =>
+    typeof s === "string" && !!s.trim() && /^[\[{]/.test(s.trim());
   const normalize = (rawResult) => {
-    const rs =
-      Array.isArray(rawResult)
-        ? rawResult
-        : rawResult?.recordset ||
+    const rs = Array.isArray(rawResult)
+      ? rawResult
+      : rawResult?.recordset ||
         (Array.isArray(rawResult?.recordsets) ? rawResult.recordsets[0] : []) ||
         [];
     if (!Array.isArray(rs) || !rs.length) return [];
     const row0 = rs[0];
     const jsonLikeKey = Object.keys(row0 || {}).find(
-      (k) => typeof row0[k] === "string" && looksLikeJson(row0[k])
+      (k) => typeof row0[k] === "string" && looksLikeJson(row0[k]),
     );
     if (jsonLikeKey) {
       try {
@@ -459,7 +491,10 @@ export const execSpJsonUniversal = async (req, res) => {
         lastErr = err;
         // if it looks like a missing-parameter error, try next param name
         const msg = String(err?.message || "").toLowerCase();
-        if (/@json|@jsondata|@filtercondition/.test(msg) && /expects parameter/.test(msg)) {
+        if (
+          /@json|@jsondata|@filtercondition/.test(msg) &&
+          /expects parameter/.test(msg)
+        ) {
           continue;
         }
         // other SQL errors: stop immediately
@@ -468,7 +503,9 @@ export const execSpJsonUniversal = async (req, res) => {
     }
     // none of the names worked
     const tried = paramOrder.map((n) => "@" + n).join(", ");
-    const e = new Error(`Stored procedure '${spName}' did not accept any of ${tried}.`);
+    const e = new Error(
+      `Stored procedure '${spName}' did not accept any of ${tried}.`,
+    );
     e.cause = lastErr;
     throw e;
   };
@@ -486,15 +523,18 @@ export const execSpJsonUniversal = async (req, res) => {
       const out = await callOnce(item);
       batch.push(out.data);
     }
-    return res
-      .status(200)
-      .json({ success: true, spName, batch: true, count: batch.length, data: batch });
+    return res.status(200).json({
+      success: true,
+      spName,
+      batch: true,
+      count: batch.length,
+      data: batch,
+    });
   } catch (err) {
     return res.status(500).json({
       success: false,
       message: "Error executing stored procedure.",
       error: err?.message || "Unknown error",
     });
-  } 
+  }
 };
-
