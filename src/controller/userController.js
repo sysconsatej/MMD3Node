@@ -139,14 +139,14 @@ export const logoutUser = async (req, res) => {
   try {
     // Clear both cookies by overwriting them with expired values
     res.clearCookie("token", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      httpOnly: false,
+      secure: false,
       sameSite: "lax",
     });
 
     res.clearCookie("user", {
       httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
+      secure: false,
       sameSite: "lax",
     });
 
