@@ -27,6 +27,11 @@ import historyRoutes from "./src/routes/historyRoute.js";
 import blWorkFlow from "./src/routes/bl-workflow.route.js";
 import validatePrint from "./src/routes/formRoute.js";
 import sendInvoiceRoute from "./src/routes/sendInvoiceRouter.js";
+import { httpLogger } from "./src/middleware/httpLogger.js";
+import { responseTimeLogger } from "./src/middleware/responseTime.js";
+import limiter from './src/middleware/rateLimiter.js';
+import logger from "./src/utils/logger.js";
+
 
 initializeConnection()
   .then(() => {
@@ -44,22 +49,23 @@ app.use(cookieParser());
 app.use(cors({ credentials: true, origin: true }));
 app.use(fileUpload({ createParentPath: true }));
 
+app.use(httpLogger);
+app.use(responseTimeLogger);
+app.use(limiter); // Apply rate limiting to all routes
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
-  next(); // continue to the next middleware
-});
+
 
 const port = process.env.PORT || 4000;
 
-app.get("/", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "Welcome to node.js!",
-  });
-});
+// app.get("/", (req, res) => {
+//   res.status(200).json({
+//     success: true,
+//     message: "Welcome to node.js!",
+//   });
+// });
 app.use("/api/v1", dropDownValuesRoute);
 app.use("/api/v1", dynamicTableRoute);
 app.use("/api/v1/form", formRoute);
@@ -78,33 +84,30 @@ app.use("/api/v1/charts", chartRoute);
 app.use("/api/v1", historyRoutes); // so full path = /api/history
 app.use("/api/v1/blWorkFlow", blWorkFlow);
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
 process.on("SIGTERM", async () => {
-  console.log("SIGTERM signal received: closing HTTP server");
-  // server.close(() => {
-  //   console.log("HTTP server closed");
-  // });
+  logger.info("SIGTERM received");
 
-  await closeConnection();
-  console.log("Database connection closed");
-
-  process.exit(0);
+  server.close(async () => {
+    await closeConnection();
+    logger.info("Server and DB closed");
+    process.exit(0);
+  });
 });
 
 // If using SIGINT (Ctrl+C) in terminal
 process.on("SIGINT", async () => {
-  console.log("SIGINT signal received: closing HTTP server");
-  // server.close(() => {
-  //   console.log("HTTP server closed");
-  // });
+  logger.info("SIGINT received");
 
-  await closeConnection();
-  console.log("Database connection closed");
-
-  process.exit(0);
+  server.close(async () => {
+    await closeConnection();
+    logger.info("Server and DB closed");
+    process.exit(0);
+  });
 });
+
 
 export default app;

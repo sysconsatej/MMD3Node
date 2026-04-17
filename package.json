@@ -18,7 +18,9 @@
     "dotenv": "^17.0.1",
     "express": "^5.1.0",
     "express-fileupload": "^1.5.2",
+    "express-rate-limit": "^8.3.2",
     "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.1",
     "mssql": "^11.0.1",
     "node-fetch": "^3.3.2",
     "nodemailer": "^7.0.6",
@@ -26,6 +28,8 @@
     "pdfkit": "^0.17.2",
     "puppeteer": "^24.24.0",
     "tls": "^0.0.1",
+    "winston": "^3.19.0",
+    "winston-daily-rotate-file": "^5.0.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
