@@ -67,7 +67,6 @@ WHERE u.name = @name
 
     const result = await executeQuery(query, parameters);
     const user = result?.[0];
-    console.log(user , '[][]')
 
     if (!user) {
       return res.status(400).send({ message: "Invalid credentials" });
