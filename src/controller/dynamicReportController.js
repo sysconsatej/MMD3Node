@@ -1,7 +1,7 @@
 import { executeQuerySpData } from "../config/DBConfig.js";
 import puppeteer from "puppeteer";
 import { getExecutablePath } from "../utils/getExecutablePath.js";
-import { getPage, puppterManager } from "../utils/puppeterManager.js";
+import { getPage } from "../utils/puppeterManager.js";
 import { getTailwindCss } from "../utils/getTailwindCss.js";
 import { builderHTML } from "../utils/builderHTML.js";
 
