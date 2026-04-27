@@ -3,7 +3,7 @@ import puppeteer from "puppeteer";
 import { getExecutablePath } from "../utils/getExecutablePath.js";
 import { getPage, puppterManager } from "../utils/puppeterManager.js";
 import { getTailwindCss } from "../utils/getTailwindCss.js";
-import { builderHTL, builderHTML } from "../utils/builderHTML.js";
+import { builderHTML } from "../utils/builderHTML.js";
 
 const looksLikeJson = (s) =>
   typeof s === "string" && !!s.trim() && /^[\[{]/.test(s.trim());
