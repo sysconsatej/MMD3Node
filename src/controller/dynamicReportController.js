@@ -1,6 +1,6 @@
 import { executeQuerySpData } from "../config/DBConfig.js";
 import puppeteer from "puppeteer";
-import os from "os";
+import { getExecutablePath } from "../utils/getExecutablePath.js";
 
 const looksLikeJson = (s) =>
   typeof s === "string" && !!s.trim() && /^[\[{]/.test(s.trim());
@@ -304,8 +304,6 @@ export const localPDFReports = async (req, res) => {
       </html>
     `;
 
-    const platform = os.platform();
-
     const browser = await puppeteer.launch({
       headless: true,
       args: [
@@ -313,21 +311,8 @@ export const localPDFReports = async (req, res) => {
         "--disable-setuid-sandbox",
         "--disable-dev-shm-usage",
       ],
-
-      ...(process.env.NODE_ENV === "production" ||
-      process.env.PUPPETEER_EXECUTABLE_PATH
-        ? {
-            executablePath:
-              process.env.PUPPETEER_EXECUTABLE_PATH ||
-              (platform === "win32"
-                ? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
-                : platform === "linux"
-                  ? "/usr/bin/chromium-browser"
-                  : undefined),
-          }
-        : {}),
+      executablePath: getExecutablePath(),
     });
-
     const page = await browser.newPage();
 
     // avoid networkidle0 stalls
