@@ -6,6 +6,7 @@ export const getTailwindCss = async () => {
 
     try {
         const cdnLink = await fetch(taiwlindUrl, { cache: "force-cache" })
+        cachedTailwind  = await  cdnLink.text();
 
     } catch (error) {
         console.error("Tailwind fetch failed:", err);
