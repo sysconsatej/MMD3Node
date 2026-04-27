@@ -1,6 +1,9 @@
 import { executeQuerySpData } from "../config/DBConfig.js";
 import puppeteer from "puppeteer";
 import { getExecutablePath } from "../utils/getExecutablePath.js";
+import { getPage, puppterManager } from "../utils/puppeterManager.js";
+import { getTailwindCss } from "../utils/getTailwindCss.js";
+import { builderHTL, builderHTML } from "../utils/builderHTML.js";
 
 const looksLikeJson = (s) =>
   typeof s === "string" && !!s.trim() && /^[\[{]/.test(s.trim());
@@ -9,8 +12,8 @@ const getFirstRecordset = (raw) =>
   Array.isArray(raw)
     ? raw
     : raw?.recordset ||
-      (Array.isArray(raw?.recordsets) ? raw.recordsets[0] : []) ||
-      [];
+    (Array.isArray(raw?.recordsets) ? raw.recordsets[0] : []) ||
+    [];
 
 const extractJsonString = (row) => {
   if (!row) return null;
@@ -29,7 +32,7 @@ const parseForJsonRecordset = (raw) => {
   if (looksLikeJson(jsonStr)) {
     try {
       return JSON.parse(jsonStr);
-    } catch {}
+    } catch { }
   }
   return rs;
 };
@@ -257,7 +260,10 @@ export const getIgmBlData = async (req, res) => {
 };
 
 export const localPDFReports = async (req, res) => {
+  let page;
   try {
+    page = await getPage();
+    const tailwindCSS = await getTailwindCss();
     const {
       htmlContent = "",
       orientation = "portrait",
@@ -266,57 +272,16 @@ export const localPDFReports = async (req, res) => {
       cssUrls = [],
     } = req.body || {};
 
-    // quick sanity checks + debug
-    console.log("localPDFReports content-type:", req.headers["content-type"]);
-    console.log("localPDFReports body keys:", Object.keys(req.body || {}));
     if (!htmlContent || typeof htmlContent !== "string") {
       return res
         .status(400)
         .json({ success: false, message: "htmlContent is required (string)" });
     }
 
-    // fetch Tailwind (best-effort; won't block if CDN fails)
-    let tailwindCSS = "";
-    try {
-      const r = await fetch(
-        "https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css",
-        { cache: "no-store" },
-      );
-      tailwindCSS = await r.text();
-    } catch {
-      /* ignore */
-    }
 
-    const fullStyledHtml = `
-      <!DOCTYPE html>
-      <html lang="en">
-        <head>
-          <meta charset="UTF-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet" />
-          <style>
-            @page { margin: 10px; }
-            body { font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
-            ${tailwindCSS}
-          </style>
-        </head>
-        <body>${htmlContent}</body>
-      </html>
-    `;
+    const fullStyledHtml = builderHTML({ htmlContent, tailwindCSS });
 
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-      ],
-      executablePath: getExecutablePath(),
-    });
-    const page = await browser.newPage();
 
-    // avoid networkidle0 stalls
-    //await page.setContent(fullStyledHtml, { waitUntil: "domcontentloaded", timeout: 60000 }); // increased time limit
     await page.setContent(fullStyledHtml, {
       waitUntil: "domcontentloaded",
       timeout: 0,
@@ -330,8 +295,8 @@ export const localPDFReports = async (req, res) => {
           img.complete
             ? Promise.resolve()
             : new Promise((r) => {
-                img.onload = img.onerror = r;
-              }),
+              img.onload = img.onerror = r;
+            }),
         ),
       );
       const cap = new Promise((r) => setTimeout(r, 4000));
@@ -345,7 +310,6 @@ export const localPDFReports = async (req, res) => {
       margin: { top: "10px", bottom: "10px", left: "10px", right: "10px" },
     });
 
-    await browser.close();
 
     const safeName = String(pdfFilename || "report").replace(
       /[\\/:*?"<>|]+/g,
@@ -364,6 +328,10 @@ export const localPDFReports = async (req, res) => {
       message: "An error occurred while generating the PDF",
       error: String(error),
     });
+  } finally {
+    if (page) {
+      await page.close();
+    }
   }
 };
 
@@ -446,8 +414,8 @@ export const execSpJsonUniversal = async (req, res) => {
     const rs = Array.isArray(rawResult)
       ? rawResult
       : rawResult?.recordset ||
-        (Array.isArray(rawResult?.recordsets) ? rawResult.recordsets[0] : []) ||
-        [];
+      (Array.isArray(rawResult?.recordsets) ? rawResult.recordsets[0] : []) ||
+      [];
     if (!Array.isArray(rs) || !rs.length) return [];
     const row0 = rs[0];
     const jsonLikeKey = Object.keys(row0 || {}).find(
