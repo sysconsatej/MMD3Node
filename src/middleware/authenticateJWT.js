@@ -6,7 +6,7 @@ export const authenticateJWT = (req, res, next) => {
   const token =  req.cookies?.token  ||  authHeader?.split(" ")[1]; // safely get token
 
   if (!token) {
-    return res.status(401).json({ message: "Token missing" });
+    return res.status(401).json({ message: "Authentication required" });
   }
 
   try {

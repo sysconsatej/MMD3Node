@@ -31,6 +31,8 @@ import { httpLogger } from "./src/middleware/httpLogger.js";
 import { responseTimeLogger } from "./src/middleware/responseTime.js";
 import limiter from './src/middleware/rateLimiter.js';
 import logger from "./src/utils/logger.js";
+import  revokePasswordRoute from "./src/routes/revoke-password.route.js"; 
+
 
 
 initializeConnection()
@@ -83,6 +85,7 @@ app.use("/api/v1", insertExternalDataApi);
 app.use("/api/v1/charts", chartRoute);
 app.use("/api/v1", historyRoutes); // so full path = /api/history
 app.use("/api/v1/blWorkFlow", blWorkFlow);
+app.use("/api/v1/auth", revokePasswordRoute);
 
 const server = app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
