@@ -108,8 +108,8 @@ WHERE u.name = @name
     };
 
     res.cookie("token", token, {
-      httpOnly: process.env.NODE_ENV === "production", // httpOnly in production
-      secure: process.env.NODE_ENV === "production", // true for HTTPS
+      httpOnly: false, // httpOnly in production
+      secure: false, // true for HTTPS
       sameSite: "lax",
       maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
@@ -117,7 +117,7 @@ WHERE u.name = @name
     // User data cookie (not httpOnly, so frontend can access it)
     res.cookie("user", JSON.stringify(userData), {
       httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
+      secure: false,
       sameSite: "lax",
       maxAge: 24 * 60 * 60 * 1000,
     });
