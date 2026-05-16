@@ -1,5 +1,6 @@
 import express from "express";
 import { updateStatus } from "../controller/updateStatusController.js";
+import { authenticateJWT } from "../middleware/authenticateJWT.js";
 
 const router = express.Router();
 
@@ -9,6 +10,6 @@ router.use(express.urlencoded({ extended: true }));
 router.use(express.text({ type: "*/*", limit: "2mb" }));
 
 // POST /api/v1/updateStatus
-router.post("/updateStatus", updateStatus);
+router.post("/updateStatus",authenticateJWT, updateStatus);
 
 export default router;
