@@ -18,16 +18,22 @@ function encrypt(text) {
 
 export const revokePassword = async (req, res) => {
     try {
-        const { emailId } = req.body;
-        if (!emailId) {
+        const user = req?.user;
+        if (!user?.emailId) {
             return res.status(400).json({ success: false, message: "emailId is required" });
         }
         const query = 'SELECT password FROM tblUser WHERE emailId = @emailId';
         const paylaodObj = {
-            emailId
+            emailId: user.emailId
         };
 
         const result = await executeQuery(query, paylaodObj);
+        if (!result || result.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
         const data = encrypt(result[0].password);
 
         return res.status(200).json({ success: true, message: "Password revoked successfully", password: data.encrypted, iv: data.iv });
