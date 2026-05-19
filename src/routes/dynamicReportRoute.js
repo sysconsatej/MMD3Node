@@ -14,7 +14,7 @@ const router = Router();
 router.post("/dynamicReport", authenticateJWT, dynamicReportUpdate);
 router.post("/spData", authenticateJWT, getSpData);
 router.post("/igmData", authenticateJWT, getIgmBlData);
-router.post("/localPDFReports", authenticateJWT, localPDFReports);
+router.post("/localPDFReports", localPDFReports);
 router.post("/blDataForDO", authenticateJWT, getBlDataForDO);
 router.post("/execSpJsonUniversal", authenticateJWT, execSpJsonUniversal);
 
