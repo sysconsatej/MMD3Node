@@ -4,11 +4,12 @@ import nodemailer from "nodemailer";
 import crypto from "crypto";
 import fs from "fs";
 import fetch from "node-fetch";
+import { getPage } from "../utils/puppeterManager.js";
 
 // ====== ENV helper ======
 const env = (
   key,
-  { required = false, stripSpaces = false, fallback = "" } = {}
+  { required = false, stripSpaces = false, fallback = "" } = {},
 ) => {
   let v = (process.env[key] ?? fallback).toString().trim();
   if (stripSpaces) v = v.replace(/\s+/g, "");
@@ -29,22 +30,26 @@ const MIN_CSS = `
 `;
 
 // Boot a warm Chromium once
-async function getBrowser() {
-  if (!BROWSER_PROMISE) {
-    BROWSER_PROMISE = await puppeteer.launch({
-      headless: "new",
-      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
-      ...(process.env.NODE_ENV === "production" ||
-        process.env.PUPPETEER_EXECUTABLE_PATH
-        ? {
-          executablePath:
-            `${process.env.PUPPETEER_EXECUTABLE_PATH}` || "/usr/bin/chromium",
-        }
-        : {}),
-    });
-  }
-  return BROWSER_PROMISE;
-}
+// async function getBrowser() {
+//   if (!BROWSER_PROMISE) {
+//     BROWSER_PROMISE = await puppeteer.launch({
+//       headless: "new",
+//       args: [
+//         "--no-sandbox",
+//         "--disable-setuid-sandbox",
+//         "--disable-dev-shm-usage",
+//       ],
+//       ...(process.env.NODE_ENV === "production" ||
+//       process.env.PUPPETEER_EXECUTABLE_PATH
+//         ? {
+//             executablePath:
+//               `${process.env.PUPPETEER_EXECUTABLE_PATH}` || "/usr/bin/chromium",
+//           }
+//         : {}),
+//     });
+//   }
+//   return BROWSER_PROMISE;
+// }
 
 // Reuse a pooled SMTP connection
 function getTransporter() {
@@ -99,7 +104,7 @@ async function getCss() {
   try {
     const res = await fetch(
       "https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css",
-      { cache: "no-store" }
+      { cache: "no-store" },
     );
     CACHED_TAILWIND = `${MIN_CSS}\n${await res.text()}`;
   } catch {
@@ -159,9 +164,9 @@ export const emailPdfReports = async (req, res) => {
 </html>`;
 
     // Puppeteer work (warm browser, single new page)
-    const browser = await getBrowser();
-    page = await browser.newPage();
-
+    // const browser = await getBrowser();
+    // page = await browser.newPage();
+    page = await getPage();
     // Block 3rd-party requests you don’t need for PDF speed (fonts/analytics/etc.)
     await page.setRequestInterception(true);
     page.on("request", (req) => {
@@ -170,7 +175,7 @@ export const emailPdfReports = async (req, res) => {
       if (
         type === "font" ||
         (type === "stylesheet" && process.env.USE_TAILWIND_CDN !== "true") ||
-        url.includes("google-analytics.com") ||
+        // url.includes("google-analytics.com") ||
         url.startsWith("https://fonts.googleapis.com/") ||
         url.startsWith("https://fonts.gstatic.com/")
       ) {
@@ -195,8 +200,8 @@ export const emailPdfReports = async (req, res) => {
               img.complete ||
               new Promise((resolve) => {
                 img.onload = img.onerror = resolve;
-              })
-          )
+              }),
+          ),
         ),
         new Promise((resolve) => setTimeout(resolve, 3000)), // 3s cap
       ]);
@@ -257,6 +262,6 @@ export const emailPdfReports = async (req, res) => {
   } finally {
     try {
       if (page) await page.close(); // keep browser warm
-    } catch { }
+    } catch {}
   }
 };
