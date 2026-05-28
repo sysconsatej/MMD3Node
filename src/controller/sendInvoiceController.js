@@ -7,10 +7,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT),
+  secure: false,
+  requireTLS: true,
   auth: {
-    user: process.env.SMTP_Test,
-    pass: process.env.SMTP_pass_Test,
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+  tls: {
+    rejectUnauthorized: true,
   },
 });
 
@@ -50,7 +56,7 @@ export async function sendInvoiceEmail(req, res) {
     }
 
     const mailOptions = {
-      from: process.env.SMTP_Test,
+      from: `"No Reply" <${process.env.SMTP_FROM}>`,
       to,
       subject,
       text: emailText,
