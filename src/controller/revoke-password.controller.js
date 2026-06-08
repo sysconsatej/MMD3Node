@@ -22,7 +22,7 @@ export const revokePassword = async (req, res) => {
         if (!user?.emailId) {
             return res.status(400).json({ success: false, message: "emailId is required" });
         }
-        const query = 'SELECT password FROM tblUser WHERE emailId = @emailId';
+        const query = 'SELECT password FROM tblUser WHERE emailId = @emailId and status = 1';
         const paylaodObj = {
             emailId: user.emailId
         };
@@ -34,6 +34,7 @@ export const revokePassword = async (req, res) => {
                 message: "User not found"
             });
         }
+        console.log("Password retrieved from database:", result[0].password); // Debug log
         const data = encrypt(result[0].password);
 
         return res.status(200).json({ success: true, message: "Password revoked successfully", password: data.encrypted, iv: data.iv });
