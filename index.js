@@ -31,7 +31,8 @@ import { httpLogger } from "./src/middleware/httpLogger.js";
 import { responseTimeLogger } from "./src/middleware/responseTime.js";
 import limiter from './src/middleware/rateLimiter.js';
 import logger from "./src/utils/logger.js";
-import  revokePasswordRoute from "./src/routes/revoke-password.route.js"; 
+import  revokePasswordRoute from "./src/routes/revoke-password.route.js";
+import pdfExtractorRoutes from "./src/routes/pdfExtractor.routes.js";
 
 
 
@@ -83,9 +84,31 @@ app.use("/api/v1/payment", paymentRoutes);
 app.use("/api/v1", uploadRoute);
 app.use("/api/v1", insertExternalDataApi);
 app.use("/api/v1/charts", chartRoute);
+//app.use("/api/v1/pdf-extractor", pdfExtractorRoutes);
+
+
+app.use(
+  "/api/v1/pdf-extractor",
+  (req, res, next) => {
+    console.log("PDF ROUTE DEBUG:", {
+      url: req.originalUrl,
+      method: req.method,
+      contentType: req.headers["content-type"],
+      contentLength: req.headers["content-length"],
+      readableEnded: req.readableEnded,
+      complete: req.complete,
+      filesAlreadyParsed: Boolean(req.files),
+    });
+
+    next();
+  },
+  pdfExtractorRoutes
+);
+
 app.use("/api/v1", historyRoutes); // so full path = /api/history
 app.use("/api/v1/blWorkFlow", blWorkFlow);
 app.use("/api/v1/auth", revokePasswordRoute);
+
 
 const server = app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
