@@ -31,7 +31,7 @@ import { httpLogger } from "./src/middleware/httpLogger.js";
 import { responseTimeLogger } from "./src/middleware/responseTime.js";
 import limiter from './src/middleware/rateLimiter.js';
 import logger from "./src/utils/logger.js";
-import  revokePasswordRoute from "./src/routes/revoke-password.route.js";
+import revokePasswordRoute from "./src/routes/revoke-password.route.js";
 import pdfExtractorRoutes from "./src/routes/pdfExtractor.routes.js";
 
 
@@ -58,6 +58,15 @@ app.use(limiter); // Apply rate limiting to all routes
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Avoid Serve static files from the uploads directory
+app.use("/uploads/invoice-pdfs", (req, res) => {
+  return res.status(403).json({
+    success: false,
+    message: "Direct access to invoice PDFs is not allowed.",
+  });
+});
+
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 
@@ -84,7 +93,7 @@ app.use("/api/v1/payment", paymentRoutes);
 app.use("/api/v1", uploadRoute);
 app.use("/api/v1", insertExternalDataApi);
 app.use("/api/v1/charts", chartRoute);
-//app.use("/api/v1/pdf-extractor", pdfExtractorRoutes);
+app.use("/uploads",express.static(path.join(__dirname, "uploads")));
 
 
 app.use(

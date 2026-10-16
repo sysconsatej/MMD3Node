@@ -1,9 +1,17 @@
 
-import express from "express";
-import { extractPdfs } from "../controller/pdfExtractor.controller.js";
+    import express from "express";
+    import { authenticateJWT } from "../middleware/authenticateJWT.js";
 
-const router = express.Router();
+    import {
+        extractPdfs,
+        verifyExtractedInvoices,
+        uploadVerifiedInvoices,
+    } from "../controller/pdfExtractor.controller.js";
 
-router.post("/extract", extractPdfs);
+    const router = express.Router();
 
-export default router;
+    router.post("/extract", extractPdfs);
+    router.post("/verify", authenticateJWT, verifyExtractedInvoices);
+    router.post("/upload-verified", authenticateJWT, uploadVerifiedInvoices);
+
+    export default router;

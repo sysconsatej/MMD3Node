@@ -54,7 +54,7 @@ SELECT
     b.name AS branchName,
     c.name AS companyName,
     la.locations
-FROM tblUser u
+FROM tblUser u  
 LEFT JOIN RoleAgg ra ON ra.userId = u.id
 LEFT JOIN LocationAgg la ON la.userId = u.id
 LEFT JOIN tblCompany c ON u.companyId = c.id
